@@ -33,6 +33,13 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+/* Traditional Chinese pages swap in matching CJK fonts */
+html[lang="zh-Hant"] {
+  --font-display: "Noto Serif TC", "Lora", Georgia, serif;
+  --font-body: "Noto Sans TC", "Nunito Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -144,12 +151,44 @@ a {
   gap: 24px;
 }
 
+.nav-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .nav-brand {
   display: flex;
   flex-direction: column;
   line-height: 1.15;
   color: var(--color-white);
   transition: color var(--transition);
+}
+
+.lang-switch {
+  color: var(--color-white);
+  opacity: 0.85;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.lang-switch:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.navbar.scrolled .lang-switch,
+.navbar.nav-open .lang-switch {
+  color: var(--color-text);
+}
+
+.navbar.scrolled .lang-switch:hover,
+.navbar.nav-open .lang-switch:hover {
+  color: var(--color-primary);
 }
 
 .nav-brand strong {
