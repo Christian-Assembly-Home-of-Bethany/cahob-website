@@ -53,7 +53,7 @@ function watchReveals(root) {
 
 watchReveals();
 
-// Page text loaded from plain .txt files (see content/README.txt).
+// Page text loaded from plain .txt files (see content/README.md).
 // Paragraphs are blocks separated by blank lines.
 document.querySelectorAll("[data-content]").forEach(async (container) => {
   try {

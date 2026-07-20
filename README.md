@@ -16,7 +16,7 @@ text files under [`content/`](content/):
 - `content/who-we-are.txt`
 
 Edit the file, separate paragraphs with one blank line, open a PR. Done.
-Details in [`content/README.txt`](content/README.txt).
+Details in [`content/README.md`](content/README.md).
 
 ## Everything else
 
