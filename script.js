@@ -25,24 +25,56 @@ if (navToggle) {
 }
 
 // Scroll-reveal animations
-const revealElements = document.querySelectorAll(".reveal");
+const revealObserver = "IntersectionObserver" in window
+  ? new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const delay = entry.target.dataset.delay || 0;
+            entry.target.style.transitionDelay = `${delay}ms`;
+            entry.target.classList.add("visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+    )
+  : null;
 
-if ("IntersectionObserver" in window) {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const delay = entry.target.dataset.delay || 0;
-          entry.target.style.transitionDelay = `${delay}ms`;
-          entry.target.classList.add("visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-  );
-
-  revealElements.forEach((el) => observer.observe(el));
-} else {
-  revealElements.forEach((el) => el.classList.add("visible"));
+function watchReveals(root) {
+  (root || document).querySelectorAll(".reveal").forEach((el) => {
+    if (revealObserver) {
+      revealObserver.observe(el);
+    } else {
+      el.classList.add("visible");
+    }
+  });
 }
+
+watchReveals();
+
+// Page text loaded from plain .txt files (see content/README.txt).
+// Paragraphs are blocks separated by blank lines.
+document.querySelectorAll("[data-content]").forEach(async (container) => {
+  try {
+    const response = await fetch(container.dataset.content);
+    if (!response.ok) throw new Error(response.status);
+    const text = await response.text();
+    text
+      .split(/\n\s*\n/)
+      .map((block) => block.trim())
+      .filter(Boolean)
+      .forEach((paragraph) => {
+        const p = document.createElement("p");
+        p.className = "reveal";
+        p.textContent = paragraph;
+        container.appendChild(p);
+      });
+  } catch (err) {
+    const p = document.createElement("p");
+    p.className = "reveal";
+    p.textContent = "This content could not be loaded. Please try refreshing the page.";
+    container.appendChild(p);
+  }
+  watchReveals(container);
+});
