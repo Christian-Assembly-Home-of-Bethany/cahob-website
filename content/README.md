@@ -7,6 +7,8 @@ from the `.txt` files in this folder:
 | --- | --- |
 | `faith-and-vision.txt` | Our Faith and Vision |
 | `who-we-are.txt` | Who We Are |
+| `faith-and-vision-zh.txt` | 我們的信仰與異象 (Chinese) |
+| `who-we-are-zh.txt` | 我們是誰 (Chinese) |
 
 To change the text, just edit the file and save. Rules:
 
