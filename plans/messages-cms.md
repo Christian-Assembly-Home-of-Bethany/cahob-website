@@ -62,7 +62,7 @@ Wilderness"):
 
 | Option | Pros | Cons |
 |---|---|---|
-| **Custom PHP + SQLite (recommended)** | Matches the site's look exactly, bilingual nav works the same way, about 600 lines we fully understand, no plugin updates to keep up with | We own the security basics (auth, CSRF, sanitizing) |
+| **Custom PHP + SQLite (recommended)** | Matches the site's look exactly, bilingual nav works the same way, roughly 1,600 lines of our own code that we fully understand, no plugin updates to keep up with | We own the security basics (auth, CSRF, sanitizing) |
 | Flat-file blog (HTMLy, Bludit) | Admin UI is ready to use | Its own theme system to fight, a separate look, more attack surface to keep patched |
 | WordPress via Softaculous | Most familiar to non-technical users | Heavy, needs MySQL and constant updates, overkill for one author |
 
@@ -79,13 +79,19 @@ The security features it needs are well understood (see "Security" below).
 ├── admin/
 │   ├── index.php         dashboard: list of posts, drafts, edit/delete
 │   ├── login.php / logout.php
-│   └── edit.php          create/edit form with WYSIWYG editor
+│   ├── edit.php          create/edit form with WYSIWYG editor
+│   └── editor.js         Quill setup, divider, tables, in-browser draft copy
 ├── lib/                  not web-accessible (.htaccess: Require all denied)
 │   ├── bootstrap.php     loads config, opens PDO, starts session
 │   ├── db.php            queries + schema migration
 │   ├── auth.php          login, session, CSRF helpers
 │   ├── render.php        shared header/nav/footer partials (en/zh)
-│   └── vendor/htmlpurifier/   vendored HTML sanitizer
+│   ├── sanitize.php      HTML Purifier allowlist and Word cleanup
+│   ├── config.example.php    template for the server's config.php
+│   ├── tools/import_blogger.php   one-off Blogger import (CLI)
+│   └── vendor/htmlpurifier/   vendored HTML sanitizer (v4.19.1)
+
+(repo only, never deployed: tests/, composer.json, composer.lock, phpunit.xml)
 
 /home/<cpanel-user>/cahob-data/     (OUTSIDE web root, never deployed)
 ├── config.php            admin password hash, DB path, secrets
@@ -112,6 +118,12 @@ CREATE TABLE messages (
   updated_at   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_messages_pub ON messages (status, published_at DESC);
+
+CREATE TABLE login_attempts (
+  ip           TEXT NOT NULL,
+  attempted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_login_attempts ON login_attempts (ip, attempted_at);
 ```
 
 The tables are created on first run (`CREATE TABLE IF NOT EXISTS`), so there is no separate
@@ -148,7 +160,9 @@ six `.html` files **and** `render.php`.
 ## Admin experience (the Blogger replacement)
 
 - **Login** at `cahob.org/admin/`. There is one admin account, for the pastor, with a
-  username and a bcrypt hash in `config.php`.
+  username and a bcrypt hash in `config.php`. There's no change-password page. When the
+  pastor asks for a new password, we generate a new hash and replace it in `config.php` on
+  the server.
 - **Dashboard** shows posts newest first, marked Draft or Published, with Edit, View, and Delete
   links and a **New message** button.
 - **Editor** has a publish date (defaults to now), then two sections, **English** and
@@ -263,29 +277,36 @@ database in the repo's ignored `dev-data/` folder.
 
 ## Implementation steps
 
+Each of steps 2–6 is its own PR into `main`, and step 2 is split into two. Every PR includes
+tests for what it adds. Its description says what it adds, how to try it locally, and what
+was tested. Merged code does nothing on the live site until `config.php` is added in step 7.
+Until then, the PHP pages only show "not set up yet" and nobody can log in.
+
 1. ~~**Server check**~~ done (see above).
-2. **Skeleton:** `lib/bootstrap.php`, `db.php` with schema, `config.example.php`, `.htaccess`
-   rules, gitignore and deploy excludes.
+2. **Skeleton**, in two PRs:
+   - **2a. HTML Purifier:** add the library (v4.19.1: 379 files, about 30,000 lines) to
+     `lib/vendor/htmlpurifier/` by itself. Reviewers only need to check the version, not
+     read the code.
+   - **2b. Skeleton:** `lib/bootstrap.php`, `db.php` with schema, `config.example.php`,
+     `.htaccess` rules, gitignore and deploy excludes. Also `composer.json` and PHPUnit, so the
+     required **Backend tests** CI check runs real tests from this PR on.
 3. **Public pages:** `render.php` partials, `messages.php`, `messages-zh.php`, `message.php`
    with pagination (10 per page), styled with the existing `styles.css` plus a few new rules.
 4. **Auth:** login, logout, session, CSRF, rate limiting.
-5. **Admin CRUD:** dashboard, editor with Quill (including the divider, centered text, and
-   tables), HTML Purifier on save, draft and preview, the in-browser copy of unsaved work,
-   and delete with confirmation.
-6. **Tests:** PHPUnit tests for slugs, sanitizing (including the Word formatting above),
-   auth/CSRF, and the import's title extraction and pairing, using a few real posts as test
-   data. Add a `composer.json` whose `test` script runs them, so the required **Backend
-   tests** CI check starts running real tests.
-7. **Blogger import:** script plus a dry run against the public feed now, and against the
-   real export once we have it.
-8. **Soft launch:** merge to `main` (after confirming), with no nav links on the static
+5. **Admin CRUD:** dashboard, editor with Quill (divider, centered text, and tables),
+   `sanitize.php` with HTML Purifier on save, draft and preview, the in-browser copy of
+   unsaved work, and delete with confirmation.
+6. **Blogger import:** script plus a dry run against the public feed now, and against the
+   real export once we have it. Its tests use a few real posts to check title guessing and
+   pairing.
+7. **Soft launch:** merge to `main` (after confirming), with no nav links on the static
    pages, so visitors won't find the new pages. Run the one-time server setup with the
    pastor's account, import the posts, and set up backups. We test on the live site first
    with that account, then delete any test posts.
-9. **Show the pastor:** set a fresh password on the account, hand it over, and let the pastor
+8. **Show the pastor:** set a fresh password on the account, hand it over, and let the pastor
    try writing drafts. Make any changes from that feedback.
-10. **Go live:** a small PR adds Messages / 信息 to the navbar and footer of all six static
-    pages.
+9. **Go live:** a small PR adds Messages / 信息 to the navbar and footer of all six static
+   pages.
 
 This replaces an earlier idea of a `./staging/` folder. That folder would sit under the same
 web root, so it would read the same `~/cahob-data/config.php`, share the live database, and
@@ -295,4 +316,5 @@ be open to search engines.
 
 These are left out on purpose and can be added later if needed: images, tags/labels, a
 monthly archive, comments, share buttons, scheduled posts, email subscribers, RSS, latest
-messages on the home page, redirects from old Blogger URLs, and multiple authors.
+messages on the home page, redirects from old Blogger URLs, multiple authors, and a
+change-password page.
