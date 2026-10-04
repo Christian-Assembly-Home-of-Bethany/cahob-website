@@ -133,11 +133,16 @@ install step.
 
 The pastor writes in both English and Chinese. Each post has an English section and a
 Chinese section, and either can be left empty. A message written in only one language just
-has an empty section for the other. Publishing requires a title in at least one language. The
-slug comes from the English title (or the date if there isn't one), cut to about 60
+has an empty section for the other. A section counts as written when it has a body.
+
+**Titles are optional**, in both languages, for new and imported posts alike. A post can be
+published once at least one language has a body. A post without a title is shown by its
+date and opening words in the lists, and by its date as the heading of its own page.
+
+The slug comes from the English title (or the date if there isn't one), cut to about 60
 characters. If that slug is taken, a `-2`, `-3`, etc. is added. While a post is a draft, its
 slug follows its title. Once it's published, the slug never changes, even if the title is
-edited, so links to it keep working.
+edited or added later, so links to it keep working.
 
 - `messages.php` lists posts using the English titles. `messages-zh.php` uses the Chinese
   titles.
@@ -165,11 +170,11 @@ six `.html` files **and** `render.php`.
   pastor asks for a new password, we generate a new hash and replace it in `config.php` on
   the server.
 - **Dashboard** shows posts newest first, marked Draft or Published, with Edit, View, and Delete
-  links and a **New message** button. Posts without a title, like freshly imported ones, show
-  their date and opening words instead.
+  links and a **New message** button. Posts without a title show their date and opening words
+  instead.
 - **Editor** has a publish date (defaults to now), then two sections, **English** and
-  **中文**, each with its own title and a WYSIWYG body. On a phone the sections stack; on
-  wider screens they sit side by side for easy comparison. The editor is Quill 2, loaded from
+  **中文**, each with its own title (optional) and a WYSIWYG body. On a phone the sections
+  stack; on wider screens they sit side by side for easy comparison. The editor is Quill 2, loaded from
   a CDN, with the formatting the pastor uses: headings, bold/italic, numbered and bulleted
   lists, links, blockquote, centered text, and a divider (horizontal line). The buttons are
   **Save draft**, **Publish**, and **Preview** (opens the public page for the draft, visible
@@ -238,10 +243,10 @@ entry layout differs, the script reads both.
   is mostly Chinese, and into the English section otherwise. (Titles can't be used, because
   they're all empty.)
 - **No titles.** Imported posts come in with empty titles, and each body is kept as written.
-  Titles are typed in the editor afterward. Publishing needs a title, so imported posts arrive
-  as **drafts** with their original dates, and each one is published once it has a title.
-  A body's first line is often the title the pastor wrote. When the title is added, that line
-  can be deleted from the body so it doesn't show twice.
+  They're **published** with their original dates, since they were already public on Blogger.
+  A body's first line is usually the title the pastor wrote, so the posts read naturally
+  without one. A title can be added in the editor at any time. When it is, that first line can
+  be deleted from the body so it doesn't show twice.
 - **Pairing.** On each day, each English post is paired with the Chinese post published
   closest in time, and each pair becomes one post with both sections. Date alone isn't enough:
   2026-08-07 has two pairs (*Who Are We 3-3* and *Marriage*). The current pairs were posted
@@ -307,9 +312,8 @@ show "not set up yet" and nobody can log in.
    cleanup.
 7. **Soft launch:** open the one PR into `main`, and merge it once it's approved (after
    confirming). The static pages have no nav links yet, so visitors won't find the new pages.
-   Run the one-time server setup with the pastor's account, import the posts as untitled
-   drafts, add their titles in the editor and publish them, and set up backups. We test on
-   the live site first with that account, then delete any test posts.
+   Run the one-time server setup with the pastor's account, import the posts, and set up
+   backups. We test on the live site first with that account, then delete any test posts.
 8. **Show the pastor:** set a fresh password on the account, hand it over, and let the pastor
    try writing drafts. Make any changes from that feedback.
 9. **Go live:** a small PR adds Messages / 信息 to the navbar and footer of all six static
