@@ -3,7 +3,7 @@ PID_FILE := .server.pid
 # Local settings and database for the messages CMS (git-ignored, never deployed).
 DEV_CONFIG := dev-data/config.php
 
-.PHONY: up down test
+.PHONY: up down test seed
 
 # Prefers PHP's built-in server (needed for the messages CMS); falls back to Python for the static pages.
 up: $(DEV_CONFIG)
@@ -30,3 +30,7 @@ $(DEV_CONFIG):
 	@mkdir -p dev-data
 	@sed "s/'debug' => false/'debug' => true/" lib/config.example.php > $@
 	@echo "Created $@ for local development"
+
+# Replaces the local database's messages with samples (refuses to run on a non-debug config).
+seed: $(DEV_CONFIG)
+	@CAHOB_CONFIG="$(CURDIR)/$(DEV_CONFIG)" php lib/tools/seed_dev.php

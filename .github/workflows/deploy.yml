@@ -36,3 +36,4 @@ jobs:
             composer.lock
             phpunit.xml
             lib/tools/dev_router.php
+            lib/tools/seed_dev.php

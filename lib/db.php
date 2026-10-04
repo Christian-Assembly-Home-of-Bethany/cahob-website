@@ -57,3 +57,30 @@ function db_migrate(PDO $pdo): void
         $pdo->commit();
     }
 }
+
+// ---------- Public pages: published messages only ----------
+
+function count_published(PDO $pdo): int
+{
+    return (int) $pdo->query("SELECT COUNT(*) FROM messages WHERE status = 'published'")->fetchColumn();
+}
+
+/** Published messages, newest first. */
+function published_messages(PDO $pdo, int $limit, int $offset): array
+{
+    $query = $pdo->prepare(
+        "SELECT * FROM messages WHERE status = 'published'
+         ORDER BY published_at DESC, id DESC LIMIT :limit OFFSET :offset"
+    );
+    $query->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $query->execute();
+    return $query->fetchAll();
+}
+
+function find_published(PDO $pdo, string $slug): ?array
+{
+    $query = $pdo->prepare("SELECT * FROM messages WHERE slug = ? AND status = 'published'");
+    $query->execute([$slug]);
+    return $query->fetch() ?: null;
+}
