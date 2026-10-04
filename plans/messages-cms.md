@@ -135,8 +135,9 @@ The pastor writes in both English and Chinese. Each post has an English section 
 Chinese section, and either can be left empty. A message written in only one language just
 has an empty section for the other. Publishing requires a title in at least one language. The
 slug comes from the English title (or the date if there isn't one), cut to about 60
-characters. If that slug is taken, a `-2`, `-3`, etc. is added. A published post keeps its slug
-when its title is edited, so links to it keep working.
+characters. If that slug is taken, a `-2`, `-3`, etc. is added. While a post is a draft, its
+slug follows its title. Once it's published, the slug never changes, even if the title is
+edited, so links to it keep working.
 
 - `messages.php` lists posts using the English titles. `messages-zh.php` uses the Chinese
   titles.
@@ -164,7 +165,8 @@ six `.html` files **and** `render.php`.
   pastor asks for a new password, we generate a new hash and replace it in `config.php` on
   the server.
 - **Dashboard** shows posts newest first, marked Draft or Published, with Edit, View, and Delete
-  links and a **New message** button.
+  links and a **New message** button. Posts without a title, like freshly imported ones, show
+  their date and opening words instead.
 - **Editor** has a publish date (defaults to now), then two sections, **English** and
   **中文**, each with its own title and a WYSIWYG body. On a phone the sections stack; on
   wider screens they sit side by side for easy comparison. The editor is Quill 2, loaded from
@@ -235,12 +237,11 @@ entry layout differs, the script reads both.
 - **Language** comes from the body text: a post goes into the Chinese section if its text
   is mostly Chinese, and into the English section otherwise. (Titles can't be used, because
   they're all empty.)
-- **Title.** The script guesses the title from the body's first line, skipping "Last
-  updated" / "最新更新日期" lines. The guess is wrong for a few posts, such as the Bible
-  reading notes (which start with the series name) and a post that opens with a full
-  sentence. So the dry run lists every guess, and a small hand-edited file (Blogger post URL
-  → title) overrides the wrong ones. If the title came from a line in the body, that line is
-  removed so the title doesn't show twice.
+- **No titles.** Imported posts come in with empty titles, and each body is kept as written.
+  Titles are typed in the editor afterward. Publishing needs a title, so imported posts arrive
+  as **drafts** with their original dates, and each one is published once it has a title.
+  A body's first line is often the title the pastor wrote. When the title is added, that line
+  can be deleted from the body so it doesn't show twice.
 - **Pairing.** On each day, each English post is paired with the Chinese post published
   closest in time, and each pair becomes one post with both sections. Date alone isn't enough:
   2026-08-07 has two pairs (*Who Are We 3-3* and *Marriage*). The current pairs were posted
@@ -249,8 +250,8 @@ entry layout differs, the script reads both.
   paragraphs keep `text-align: center`, and Word-only tags like `<o:p>` are dropped. The result
   then goes through the same HTML Purifier rules as new posts.
 
-A `--dry-run` flag prints each planned post (date, both derived titles, and which Blogger
-posts were merged) so we can check it before importing. Run it locally against a throwaway
+A `--dry-run` flag prints each planned post (its date, plus the opening words of each Blogger
+post merged into it) so we can check it before importing. Run it locally against a throwaway
 database first, check the result with `make up`, then run it for real and upload the
 `.sqlite` to `~/cahob-data/`. The script finds the config through `CAHOB_CONFIG`, because
 `DOCUMENT_ROOT` isn't set on the command line.
@@ -277,19 +278,24 @@ database in the repo's ignored `dev-data/` folder.
 
 ## Implementation steps
 
-Each of steps 2–6 is its own PR into `main`, and step 2 is split into two. Every PR includes
-tests for what it adds. Its description says what it adds, how to try it locally, and what
-was tested. Merged code does nothing on the live site until `config.php` is added in step 7.
-Until then, the PHP pages only show "not set up yet" and nobody can log in.
+Everything is built on one branch, one step at a time. After each step, we run it locally
+with `make up`, review the changes in the browser, and commit the step once it's approved.
+Every step includes tests for what it adds.
+
+When steps 2–6 are done, **one PR into `main`** holds the whole feature, with one commit per
+step. HTML Purifier gets a commit of its own, so reviewers can skip it. The PR description
+says what each step adds, how to try it locally, and what was tested. Merged code does
+nothing on the live site until `config.php` is added in step 7. Until then, the PHP pages only
+show "not set up yet" and nobody can log in.
 
 1. ~~**Server check**~~ done (see above).
-2. **Skeleton**, in two PRs:
+2. **Skeleton**, in two commits:
    - **2a. HTML Purifier:** add the library (v4.19.1: 379 files, about 30,000 lines) to
      `lib/vendor/htmlpurifier/` by itself. Reviewers only need to check the version, not
      read the code.
    - **2b. Skeleton:** `lib/bootstrap.php`, `db.php` with schema, `config.example.php`,
      `.htaccess` rules, gitignore and deploy excludes. Also `composer.json` and PHPUnit, so the
-     required **Backend tests** CI check runs real tests from this PR on.
+     required **Backend tests** CI check runs real tests from then on.
 3. **Public pages:** `render.php` partials, `messages.php`, `messages-zh.php`, `message.php`
    with pagination (10 per page), styled with the existing `styles.css` plus a few new rules.
 4. **Auth:** login, logout, session, CSRF, rate limiting.
@@ -297,12 +303,13 @@ Until then, the PHP pages only show "not set up yet" and nobody can log in.
    `sanitize.php` with HTML Purifier on save, draft and preview, the in-browser copy of
    unsaved work, and delete with confirmation.
 6. **Blogger import:** script plus a dry run against the public feed now, and against the
-   real export once we have it. Its tests use a few real posts to check title guessing and
-   pairing.
-7. **Soft launch:** merge to `main` (after confirming), with no nav links on the static
-   pages, so visitors won't find the new pages. Run the one-time server setup with the
-   pastor's account, import the posts, and set up backups. We test on the live site first
-   with that account, then delete any test posts.
+   real export once we have it. Its tests use a few real posts to check pairing and the Word
+   cleanup.
+7. **Soft launch:** open the one PR into `main`, and merge it once it's approved (after
+   confirming). The static pages have no nav links yet, so visitors won't find the new pages.
+   Run the one-time server setup with the pastor's account, import the posts as untitled
+   drafts, add their titles in the editor and publish them, and set up backups. We test on
+   the live site first with that account, then delete any test posts.
 8. **Show the pastor:** set a fresh password on the account, hand it over, and let the pastor
    try writing drafts. Make any changes from that feedback.
 9. **Go live:** a small PR adds Messages / 信息 to the navbar and footer of all six static
