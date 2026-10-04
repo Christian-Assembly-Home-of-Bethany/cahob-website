@@ -24,13 +24,25 @@ Details in [`content/README.md`](content/README.md).
 - Styles: `styles.css` · Behavior (nav, animations, content loading): `script.js`
 - Images: `images/` — compress photos to ≤500 KB before adding
 
+## Messages (PHP)
+
+The Messages section is a small PHP + SQLite app (see
+[`plans/messages-cms.md`](plans/messages-cms.md)). Shared PHP code lives in `lib/`,
+which the server blocks from the web. The database and the admin password live on the server
+in `~/cahob-data/`, outside the web root, so deploys never touch them.
+
 ## Previewing locally
 
-Run any static server from the repo root, e.g.:
-
 ```
-python3 -m http.server 4173
+make up      # http://localhost:8000, with PHP if installed (on Windows, run from Git Bash)
+make down    # stop it
 ```
 
-then open http://localhost:4173. (Opening the HTML files directly won't load
-the `content/` text files.)
+The first `make up` creates `dev-data/config.php`, a local config with its own throwaway
+database. Without PHP it falls back to Python, and only the static pages work. (Opening the
+HTML files directly won't load the `content/` text files.)
+
+## Tests
+
+PHP 8.2+ and Composer are needed. Run `composer install` once, then `make test` (or
+`composer test`). CI runs the same tests on every PR.
