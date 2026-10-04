@@ -29,3 +29,5 @@ jobs:
             .github/**
             README.md
             Makefile
+            CLAUDE.md
+            plans/**
