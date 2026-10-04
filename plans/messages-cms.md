@@ -44,7 +44,7 @@ Wilderness"):
   uploads.
 - **Languages.** Some messages are posted twice, as separate English and Chinese entries on
   the same day. Others are Chinese only, like the Bible reading notes.
-- **Blogger features he has on.** Labels (e.g. Romans, Bible Reading Notes), a monthly archive,
+- **Blogger features in use.** Labels (e.g. Romans, Bible Reading Notes), a monthly archive,
   comments, and share buttons. These are all out of scope for v1.
 
 ## Build vs. adopt
@@ -121,7 +121,7 @@ comes from the English title (or the date if there isn't one).
 - If one section is empty, the list and the post page show the other language instead, so no
   post ever looks blank. The **中文** / **English** link only appears when both sections exist.
 
-On Blogger he posts each language separately. Here they're the same post, which keeps one post
+On Blogger each language is a separate post. Here both languages are one post, which keeps one post
 per message and fits the CLAUDE.md rule that both language versions get
 updated together.
 
@@ -140,13 +140,13 @@ six `.html` files **and** `render.php`.
   links and a **New message** button.
 - **Editor** has a publish date (defaults to now), then two sections, **English** and
   **中文**, each with its own title and a WYSIWYG body. On a phone the sections stack; on
-  wider screens they sit side by side so he can compare them. The editor is Quill, loaded from
-    a CDN, with the formatting his posts use: headings, bold/italic, numbered and bulleted
+  wider screens they sit side by side for easy comparison. The editor is Quill, loaded from
+    a CDN, with the formatting the pastor uses: headings, bold/italic, numbered and bulleted
   lists, links, and blockquote. The buttons are **Save draft**, **Publish**, and **Preview**
   (opens the public page for the draft, visible only to the logged-in admin).
 - **Pasting** from Word or Google Docs keeps headings, bold, and lists. Fonts, colors, and
   other formatting are dropped when the post is saved.
-- The editor works on a phone, so he can post from his phone.
+- The editor works on a phone, so the pastor can post from a phone.
 
 ## Security
 
@@ -222,7 +222,7 @@ database in the repo's ignored `dev-data/` folder.
 9. **Deploy to staging:** a subfolder or test branch with `server-dir: ./staging/` so the
    pastor can try it before it goes on `main`.
 10. **Go live:** merge to `main` (after confirming), run the one-time server setup, import the
-    posts, hand the pastor his login, and set up backups.
+    posts, give the pastor a login, and set up backups.
 
 ## Out of scope for v1
 
