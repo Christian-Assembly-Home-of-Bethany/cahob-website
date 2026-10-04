@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Passes trivially until the PHP backend (composer.json) exists, so this can stay a required check.
+      - name: Skip (no PHP backend yet)
+        if: hashFiles('composer.json') == ''
+        run: echo "No composer.json found; skipping backend tests."
+
+      - uses: shivammathur/setup-php@v2
+        if: hashFiles('composer.json') != ''
+        with:
+          php-version: "8.2"
+          extensions: pdo_sqlite, mbstring, fileinfo
+          tools: composer
+
+      - name: Install dependencies
+        if: hashFiles('composer.json') != ''
+        run: composer install --no-interaction --no-progress
+
+      - name: Run tests
+        if: hashFiles('composer.json') != ''
+        run: composer test
