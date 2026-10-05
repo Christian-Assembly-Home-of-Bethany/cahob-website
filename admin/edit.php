@@ -1,7 +1,8 @@
 <?php
 // The message editor: /admin/edit.php for a new message, /admin/edit.php?id=N to edit one.
 // Chinese and English sit side by side (stacked on a phone), each with an optional title and a
-// Quill editor. The form handling itself is in lib/editor.php.
+// Quill editor. The form handling itself is in lib/editor.php. Below the form, the version
+// history loads an earlier saved version into the form (?id=N&revision=R); saving it restores it.
 
 declare(strict_types=1);
 
@@ -51,15 +52,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// An earlier version to show in the form instead of the current one. Nothing changes until it's saved.
+$revision = null;
+if ($existing !== null && $submitted === null && ctype_digit((string) ($_GET['revision'] ?? ''))) {
+    $revision = find_revision(db(), (int) $existing['id'], (int) $_GET['revision']);
+}
+
 $message = $existing ?? new_message();
+$shown = $revision ?? $message;
 $values = [
-    'title_zh' => $submitted['title_zh'] ?? $message['title_zh'],
-    'title_en' => $submitted['title_en'] ?? $message['title_en'],
-    'body_zh' => $submitted['body_zh'] ?? $message['body_zh'],
-    'body_en' => $submitted['body_en'] ?? $message['body_en'],
-    'published_at' => $submitted['published_at_input'] ?? utc_to_local_input($message['published_at'] ?? now_utc()),
+    'title_zh' => $submitted['title_zh'] ?? $shown['title_zh'],
+    'title_en' => $submitted['title_en'] ?? $shown['title_en'],
+    'body_zh' => $submitted['body_zh'] ?? $shown['body_zh'],
+    'body_en' => $submitted['body_en'] ?? $shown['body_en'],
+    'published_at' => $submitted['published_at_input'] ?? utc_to_local_input($shown['published_at'] ?? now_utc()),
 ];
 $isPublished = $message['status'] === 'published';
+$saveButton = at($isPublished ? 'btn_update' : 'btn_save_draft');
 $notice = in_array($_GET['notice'] ?? '', EDITOR_NOTICES, true) ? $_GET['notice'] : null;
 $formAction = '/admin/edit.php' . ($existing !== null ? '?id=' . (int) $existing['id'] : '');
 $publicLang = admin_lang() === 'zh' ? 'zh' : 'en';
@@ -99,6 +108,12 @@ foreach ($errors as $error) {
     admin_alert('error', at($error));
 }
 ?>
+<?php if ($revision !== null): ?>
+      <p class="admin-alert admin-alert--notice revision-banner" role="status">
+        <span><?= e(at('revision_loaded', format_date_time($revision['saved_at'], admin_lang()), $saveButton)) ?></span>
+        <a href="/admin/edit.php?id=<?= (int) $existing['id'] ?>"><?= at('revision_cancel') ?></a>
+      </p>
+<?php endif; ?>
       <p class="admin-alert admin-alert--error" id="session-lost" role="alert" hidden><?= at('session_lost') ?> <a href="/admin/login.php" target="_blank" rel="noopener"><?= at('log_in_again') ?></a></p>
       <div class="admin-alert admin-alert--notice restore-banner" id="restore-banner" role="status" hidden>
         <span id="restore-text"></span>
@@ -144,6 +159,29 @@ foreach ($errors as $error) {
 <?php endif; ?>
         </div>
       </form>
+<?php if ($existing !== null):
+    $revisions = message_revisions(db(), (int) $existing['id']);
+?>
+
+      <section class="admin-card history-card" aria-labelledby="history-title">
+        <h2 id="history-title"><?= at('history_title') ?></h2>
+<?php if (count($revisions) < 2): ?>
+        <p class="admin-intro"><?= at('history_only_one') ?></p>
+<?php else: ?>
+        <p class="admin-intro"><?= e(at('history_intro', $saveButton)) ?></p>
+        <form method="get" action="/admin/edit.php" class="history-form">
+          <input type="hidden" name="id" value="<?= (int) $existing['id'] ?>" />
+          <label for="revision"><?= at('history_label') ?></label>
+          <select id="revision" name="revision">
+<?php foreach ($revisions as $i => $version): ?>
+            <option value="<?= (int) $version['id'] ?>"<?= $i === 0 ? ' disabled' : '' ?><?= $version['id'] === ($revision['id'] ?? null) ? ' selected' : '' ?>><?= format_date_time($version['saved_at'], admin_lang()) ?> · <?= at($version['status'] === 'published' ? 'status_published' : 'status_draft') ?><?= $i === 0 ? at('history_current') : '' ?></option>
+<?php endforeach; ?>
+          </select>
+          <button type="submit" class="btn btn-ghost admin-btn"><?= at('history_load') ?></button>
+        </form>
+<?php endif; ?>
+      </section>
+<?php endif; ?>
 <?php
 admin_footer(
     '    <script src="' . QUILL_JS . '" integrity="' . QUILL_JS_SRI . '" crossorigin="anonymous"></script>' . "\n"

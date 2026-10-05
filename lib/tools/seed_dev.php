@@ -192,6 +192,11 @@ $insert->execute([
     'status' => 'draft',
     'published_at' => days_ago(0),
 ]);
+// The published samples' slugs are fixed, and every sample starts its version history.
+$pdo->exec("UPDATE messages SET was_published = 1 WHERE status = 'published'");
+foreach ($pdo->query('SELECT id FROM messages')->fetchAll(PDO::FETCH_COLUMN) as $id) {
+    add_revision($pdo, (int) $id);
+}
 $pdo->commit();
 
 printf("Seeded %d published messages and 1 draft.\n", count($samples));

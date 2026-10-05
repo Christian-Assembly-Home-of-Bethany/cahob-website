@@ -1,6 +1,6 @@
 <?php
-// Admin dashboard: every message (drafts included) with links to edit, view, and delete, and
-// the latest entries of the security log.
+// Admin dashboard: every message (drafts included) with links to edit, view, and delete, the
+// deleted messages (which can be restored), and the latest entries of the security log.
 
 declare(strict_types=1);
 
@@ -14,6 +14,7 @@ const SECURITY_ROWS = 10;
 $admin = require_admin();
 $lang = admin_lang();
 $messages = all_messages(db());
+$deleted = deleted_messages(db());
 $events = read_security_log(data_dir() . '/logs/security.log', SECURITY_ROWS);
 $publicLang = $lang === 'zh' ? 'zh' : 'en';
 
@@ -28,6 +29,8 @@ admin_header(at('messages_title'), $admin);
       </div>
 <?php if (isset($_GET['deleted'])) {
     admin_alert('notice', at('notice_deleted'));
+} elseif (isset($_GET['restored'])) {
+    admin_alert('notice', at('notice_restored'));
 } ?>
 
 <?php if (!$messages): ?>
@@ -75,6 +78,42 @@ admin_header(at('messages_title'), $admin);
           </tbody>
         </table>
       </div>
+<?php endif; ?>
+<?php if ($deleted): ?>
+
+      <details class="deleted-panel"<?= isset($_GET['deleted']) ? ' open' : '' ?>>
+        <summary><?= e(at('deleted_title', count($deleted))) ?></summary>
+        <p class="admin-intro"><?= at('deleted_intro') ?></p>
+        <div class="admin-table-wrap">
+          <table class="admin-table message-table deleted-table">
+            <thead>
+              <tr>
+                <th scope="col"><?= at('col_title') ?></th>
+                <th scope="col"><?= at('col_status') ?></th>
+                <th scope="col"><?= at('col_deleted_at') ?></th>
+                <th scope="col"><span class="visually-hidden"><?= at('col_actions') ?></span></th>
+              </tr>
+            </thead>
+            <tbody>
+<?php foreach ($deleted as $message):
+    $label = dashboard_label($message);
+?>
+              <tr>
+                <td class="message-table-title" lang="<?= t($label['lang'], 'html_lang') ?>"><?php if ($label['untitled']): ?><span class="untitled-tag"><?= at('untitled') ?></span> <?php endif; ?><?= e($label['text']) ?></td>
+                <td><span class="status-badge status-badge--<?= $message['status'] ?>"><?= at($message['status'] === 'published' ? 'status_published' : 'status_draft') ?></span></td>
+                <td class="message-table-date"><time datetime="<?= iso_date($message['deleted_at']) ?>"><?= format_date_time($message['deleted_at'], $lang) ?></time></td>
+                <td class="message-table-actions">
+                  <form method="post" action="/admin/restore.php?id=<?= (int) $message['id'] ?>">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="admin-small-button admin-small-button--plain"><?= at('restore') ?></button>
+                  </form>
+                </td>
+              </tr>
+<?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </details>
 <?php endif; ?>
 
       <section class="security-panel" aria-labelledby="security-title">

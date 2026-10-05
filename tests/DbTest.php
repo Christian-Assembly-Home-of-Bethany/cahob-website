@@ -23,16 +23,48 @@ final class DbTest extends TestCase
 
     public function testFirstRunCreatesTheTables(): void
     {
-        $this->assertSame(['login_attempts', 'messages'], $this->tables());
-        $this->assertSame(1, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
+        $this->assertSame(['login_attempts', 'message_revisions', 'messages'], $this->tables());
+        $this->assertSame(2, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
     }
 
     public function testMigratingAgainChangesNothing(): void
     {
         $this->pdo->exec("INSERT INTO messages (slug, title_en) VALUES ('kept', 'Kept')");
         db_migrate($this->pdo);
-        $this->assertSame(['login_attempts', 'messages'], $this->tables());
+        $this->assertSame(['login_attempts', 'message_revisions', 'messages'], $this->tables());
         $this->assertSame('Kept', $this->pdo->query("SELECT title_en FROM messages WHERE slug = 'kept'")->fetchColumn());
+    }
+
+    public function testUpgradingKeepsMessagesAndStartsTheirHistory(): void
+    {
+        // A database from before version 2, as the first deploy created it.
+        $old = db_open(':memory:');
+        $old->exec(<<<'SQL'
+            CREATE TABLE messages (
+              id INTEGER PRIMARY KEY, slug TEXT NOT NULL UNIQUE,
+              title_en TEXT NOT NULL DEFAULT '', body_en TEXT NOT NULL DEFAULT '',
+              title_zh TEXT NOT NULL DEFAULT '', body_zh TEXT NOT NULL DEFAULT '',
+              status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+              published_at TEXT,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE login_attempts (ip TEXT NOT NULL, attempted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+            INSERT INTO messages (id, slug, body_zh, status, published_at, updated_at)
+              VALUES (1, '2026-09-28', '<p>舊信息</p>', 'published', '2026-09-28T17:00:00Z', '2026-09-29 03:00:00'),
+                     (2, 'unfinished', '', 'draft', '2026-10-01T17:00:00Z', '2026-10-01 18:00:00');
+            PRAGMA user_version = 1;
+            SQL);
+
+        db_migrate($old);
+
+        $rows = $old->query('SELECT id, was_published, deleted_at FROM messages ORDER BY id')->fetchAll();
+        $this->assertSame([['id' => 1, 'was_published' => 1, 'deleted_at' => null], ['id' => 2, 'was_published' => 0, 'deleted_at' => null]], $rows);
+        $history = message_revisions($old, 1);
+        $this->assertCount(1, $history);
+        $this->assertSame('<p>舊信息</p>', $history[0]['body_zh']);
+        $this->assertSame('published', $history[0]['status']);
+        $this->assertSame('2026-09-29 03:00:00', $history[0]['saved_at'], 'Dated when the message was last saved.');
+        $this->assertCount(1, message_revisions($old, 2));
     }
 
     public function testNewMessageDefaultsToAnEmptyDraft(): void

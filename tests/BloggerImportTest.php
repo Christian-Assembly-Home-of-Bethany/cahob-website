@@ -117,6 +117,8 @@ final class BloggerImportTest extends TestCase
             $this->assertSame('', $row['title_en']);
             $this->assertSame('', $row['title_zh']);
         }
+        $this->assertSame(6, (int) $pdo->query('SELECT COUNT(*) FROM messages WHERE was_published = 1')->fetchColumn(), 'Their links are fixed.');
+        $this->assertSame(6, (int) $pdo->query('SELECT COUNT(*) FROM message_revisions')->fetchColumn(), 'Each starts its version history.');
         $this->assertSame(1, (int) $rows[0]['en']);
         $this->assertSame(1, (int) $rows[0]['zh']);
         $this->assertSame(0, (int) $rows[3]['en'], 'The Chinese-only post has no English section.');
@@ -134,10 +136,11 @@ final class BloggerImportTest extends TestCase
     public function testReplaceDeletesWhatWasThere(): void
     {
         $pdo = $this->memoryDb();
-        $pdo->exec("INSERT INTO messages (slug) VALUES ('already-here')");
+        save_message($pdo, ['title_en' => 'Already here', 'body_en' => '<p>x</p>', 'title_zh' => '', 'body_zh' => '', 'status' => 'draft', 'published_at' => '2026-10-01T18:00:00Z']);
         import_messages($pdo, messages_to_import(pair_posts($this->posts())), true);
         $this->assertSame(6, (int) $pdo->query('SELECT COUNT(*) FROM messages')->fetchColumn());
         $this->assertFalse($pdo->query("SELECT 1 FROM messages WHERE slug = 'already-here'")->fetchColumn());
+        $this->assertSame(6, (int) $pdo->query('SELECT COUNT(*) FROM message_revisions')->fetchColumn(), 'Its history went with it.');
     }
 
     // ---------- Command line ----------

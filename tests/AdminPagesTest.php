@@ -119,6 +119,7 @@ final class AdminPagesTest extends TestCase
         $this->assertStringNotContainsString('value="unpublish"', $html);
         $this->assertStringContainsString('value="' . utc_to_local_input(now_utc()) . '"', $html);
         $this->assertStringContainsString('data-key="new"', $html);
+        $this->assertStringNotContainsString('版本記錄', $html, 'A new message has no history yet.');
         $this->assertLessThan(strpos($html, 'id="title_en"'), strpos($html, 'id="title_zh"'), 'Chinese comes first.');
     }
 
@@ -186,6 +187,92 @@ final class AdminPagesTest extends TestCase
         $this->assertStringContainsString('要刪除的信息', $html);
         $this->assertStringContainsString('<form method="post" action="/admin/delete.php?id=' . $id . '"', $html);
         $this->assertNotNull(find_message(db(), $id), 'Opening the page deletes nothing.');
+    }
+
+    public function testDeletedMessagesAreListedSeparatelyWithRestore(): void
+    {
+        $this->add(['title_zh' => '還在的信息', 'body_zh' => '<p>x</p>']);
+        $gone = $this->add(['title_zh' => '刪掉的信息', 'body_zh' => '<p>x</p>']);
+        delete_message(db(), $gone);
+
+        $html = $this->render('index.php', ['deleted' => '1']);
+
+        $this->assertStringContainsString('已刪除信息。', $html);
+        $this->assertStringContainsString('<details class="deleted-panel" open>', $html, 'Opened right after deleting, so it is clear where it went.');
+        $this->assertStringContainsString('已刪除的信息（1）', $html);
+        $this->assertStringContainsString('<form method="post" action="/admin/restore.php?id=' . $gone . '">', $html);
+        $this->assertStringNotContainsString('href="/admin/edit.php?id=' . $gone . '"', $html, 'A deleted message is restored before it can be edited.');
+        $this->assertLessThan(strpos($html, 'deleted-panel'), strpos($html, '還在的信息'));
+        $this->assertGreaterThan(strpos($html, 'deleted-panel'), strpos($html, '刪掉的信息'));
+    }
+
+    public function testNoDeletedListWhenNothingIsDeleted(): void
+    {
+        $this->add(['title_zh' => '信息', 'body_zh' => '<p>x</p>']);
+        $this->assertStringNotContainsString('deleted-panel', $this->render('index.php'));
+    }
+
+    public function testDeletedMessageCannotBeEdited(): void
+    {
+        $id = $this->add(['body_en' => '<p>x</p>']);
+        delete_message(db(), $id);
+        $html = $this->render('edit.php', ['id' => (string) $id]);
+        $this->assertSame(404, http_response_code());
+        $this->assertStringContainsString('找不到這篇信息', $html);
+    }
+
+    public function testEditorListsEarlierVersions(): void
+    {
+        $id = $this->add(['title_zh' => '第一版', 'body_zh' => '<p>一</p>']);
+        save_message(db(), ['title_zh' => '第二版', 'body_zh' => '<p>二</p>', 'title_en' => '', 'body_en' => '', 'status' => 'published', 'published_at' => '2026-10-02T18:00:00Z'], find_message(db(), $id));
+        [$current, $first] = message_revisions(db(), $id);
+
+        $html = $this->render('edit.php', ['id' => (string) $id]);
+
+        $this->assertStringContainsString('版本記錄', $html);
+        $this->assertStringContainsString('再按「更新」就能還原', $html);
+        $this->assertMatchesRegularExpression('#<option value="' . $current['id'] . '" disabled>[^<]+（目前版本）</option>#u', $html);
+        $this->assertMatchesRegularExpression('#<option value="' . $first['id'] . '">\d{4}年\d+月\d+日 [上下]午\d+:\d\d · 已發佈</option>#u', $html);
+        $this->assertStringContainsString('value="第二版"', $html, 'The form shows the current version.');
+    }
+
+    public function testEditorWithOneVersionSaysSo(): void
+    {
+        $id = $this->add(['body_en' => '<p>x</p>']);
+        $html = $this->render('edit.php', ['id' => (string) $id]);
+        $this->assertStringContainsString('目前只有這一個版本', $html);
+        $this->assertStringNotContainsString('<select', $html);
+    }
+
+    public function testLoadingAnEarlierVersionFillsTheFormWithoutSaving(): void
+    {
+        $id = $this->add(['title_zh' => '第一版', 'body_zh' => '<p>一</p>', 'published_at' => '2026-09-01T18:00:00Z']);
+        save_message(db(), ['title_zh' => '第二版', 'body_zh' => '<p>二</p>', 'title_en' => '', 'body_en' => '', 'status' => 'published', 'published_at' => '2026-10-02T18:00:00Z'], find_message(db(), $id));
+        $first = message_revisions(db(), $id)[1];
+
+        $html = $this->render('edit.php', ['id' => (string) $id, 'revision' => (string) $first['id']]);
+
+        $this->assertStringContainsString('value="第一版"', $html);
+        $this->assertStringContainsString('<p>一</p></div>', $html);
+        $this->assertStringContainsString('value="2026-09-01T11:00"', $html);
+        $this->assertStringContainsString('的版本，還沒有儲存。按「更新」就會還原成這個版本。', $html);
+        $this->assertStringContainsString('<a href="/admin/edit.php?id=' . $id . '">不要還原，回到目前版本</a>', $html);
+        $this->assertStringContainsString('<option value="' . $first['id'] . '" selected>', $html);
+        $this->assertStringContainsString('<form method="post" action="/admin/edit.php?id=' . $id . '"', $html, 'Saving goes to the message, not the version.');
+        $this->assertSame('第二版', find_message(db(), $id)['title_zh'], 'Loading a version changes nothing.');
+    }
+
+    public function testAnotherMessagesVersionIsIgnored(): void
+    {
+        $mine = $this->add(['title_zh' => '我的信息', 'body_zh' => '<p>x</p>']);
+        $other = $this->add(['title_zh' => '別的信息', 'body_zh' => '<p>y</p>']);
+        $otherVersion = message_revisions(db(), $other)[0]['id'];
+
+        $html = $this->render('edit.php', ['id' => (string) $mine, 'revision' => (string) $otherVersion]);
+
+        $this->assertStringContainsString('value="我的信息"', $html);
+        $this->assertStringNotContainsString('別的信息', $html);
+        $this->assertStringNotContainsString('revision-banner', $html);
     }
 
     public function testPreviewShowsUnsavedTextCleanedAndSavesNothing(): void

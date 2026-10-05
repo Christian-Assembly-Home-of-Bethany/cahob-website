@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 7;
+const STYLES_VERSION = 8;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -152,6 +152,15 @@ function format_date(string $utc, string $lang): string
     return $lang === 'zh'
         ? sprintf('%d年%d月%d日', $date->format('Y'), $date->format('n'), $date->format('j'))
         : $date->format('F j, Y');
+}
+
+/** A UTC timestamp from the database, shown as a Pacific-time date and time. */
+function format_date_time(string $utc, string $lang): string
+{
+    $date = (new DateTimeImmutable($utc, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Los_Angeles'));
+    return $lang === 'zh'
+        ? format_date($utc, 'zh') . ' ' . ($date->format('A') === 'AM' ? '上午' : '下午') . $date->format('g:i')
+        : format_date($utc, 'en') . ', ' . $date->format('g:i A');
 }
 
 /** The value for a <time datetime="..."> attribute. */
@@ -355,7 +364,11 @@ const ADMIN_TEXT = [
         'delete' => '刪除',
         'new_tab' => '（在新分頁開啟）',
         'no_messages' => '還沒有任何信息。按「新增信息」開始撰寫。',
-        'notice_deleted' => '已刪除信息。',
+        'notice_deleted' => '已刪除信息。如果要找回來，可以在下方「已刪除的信息」按「還原」。',
+        'notice_restored' => '已還原信息，狀態和刪除前一樣。',
+        'deleted_title' => '已刪除的信息（%d）',
+        'deleted_intro' => '訪客看不到刪除的信息。按「還原」會把信息放回列表，狀態和刪除前一樣。',
+        'col_deleted_at' => '刪除時間',
         'security_title' => '安全紀錄',
         'security_intro' => '最近 %d 筆登入紀錄，最新的在最上面。完整紀錄存放在伺服器的 cahob-data/logs/security.log。',
         'security_empty' => '目前沒有紀錄。',
@@ -415,10 +428,19 @@ const ADMIN_TEXT = [
         'tb_col' => '在右邊新增一欄',
         'tb_table_delete' => '刪除表格',
         'tb_clean' => '清除格式',
+        // Version history
+        'history_title' => '版本記錄',
+        'history_intro' => '每次儲存都會保留一份。載入舊版本後，檢查內容，再按「%s」就能還原成那個版本。',
+        'history_only_one' => '目前只有這一個版本。之後每次儲存，都會在這裡多一個可以還原的版本。',
+        'history_label' => '選擇版本',
+        'history_current' => '（目前版本）',
+        'history_load' => '載入這個版本',
+        'revision_loaded' => '已載入 %s 的版本，還沒有儲存。按「%s」就會還原成這個版本。',
+        'revision_cancel' => '不要還原，回到目前版本',
         // Delete
         'delete_title' => '刪除信息',
         'delete_question' => '確定要刪除這篇信息嗎？',
-        'delete_warning' => '刪除後無法復原。如果只是暫時不想公開，可以改回草稿。',
+        'delete_warning' => '刪除後訪客就看不到了，但之後還可以在信息列表下方的「已刪除的信息」還原。如果只是暫時不想公開，也可以改回草稿。',
         'delete_confirm' => '刪除',
         'cancel' => '取消',
         // Preview
@@ -465,7 +487,11 @@ const ADMIN_TEXT = [
         'delete' => 'Delete',
         'new_tab' => '(opens in a new tab)',
         'no_messages' => 'No messages yet. Click "New message" to write one.',
-        'notice_deleted' => 'Message deleted.',
+        'notice_deleted' => 'Message deleted. To get it back, click Restore under "Deleted messages" below.',
+        'notice_restored' => 'Message restored, with the status it had before.',
+        'deleted_title' => 'Deleted messages (%d)',
+        'deleted_intro' => "Visitors can't see deleted messages. Restore puts a message back in the list with the status it had before.",
+        'col_deleted_at' => 'Deleted',
         'security_title' => 'Security log',
         'security_intro' => 'The latest %d login events, newest first. The full log is on the server in cahob-data/logs/security.log.',
         'security_empty' => 'Nothing logged yet.',
@@ -525,10 +551,19 @@ const ADMIN_TEXT = [
         'tb_col' => 'Add a column to the right',
         'tb_table_delete' => 'Delete table',
         'tb_clean' => 'Clear formatting',
+        // Version history
+        'history_title' => 'Version history',
+        'history_intro' => 'A copy is kept every time you save. Load an earlier version, check it, then click "%s" to go back to it.',
+        'history_only_one' => 'There is only this version so far. Each time you save, another version you can go back to appears here.',
+        'history_label' => 'Choose a version',
+        'history_current' => ' (current)',
+        'history_load' => 'Load this version',
+        'revision_loaded' => 'Loaded the version from %s. It isn\'t saved yet: click "%s" to go back to this version.',
+        'revision_cancel' => 'Never mind, back to the current version',
         // Delete
         'delete_title' => 'Delete message',
         'delete_question' => 'Delete this message?',
-        'delete_warning' => "This can't be undone. To hide it for now instead, unpublish it.",
+        'delete_warning' => 'Visitors won\'t see it anymore, but you can bring it back later from "Deleted messages" at the bottom of the list. To hide it for now, you can also unpublish it.',
         'delete_confirm' => 'Delete',
         'cancel' => 'Cancel',
         // Preview

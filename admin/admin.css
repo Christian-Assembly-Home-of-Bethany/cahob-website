@@ -453,6 +453,27 @@
   color: var(--color-text-light);
 }
 
+.deleted-panel {
+  margin-top: 40px;
+  display: grid;
+  gap: 12px;
+}
+
+.deleted-panel summary {
+  cursor: pointer;
+  width: fit-content;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.deleted-table .message-table-title {
+  color: var(--color-text-light);
+}
+
+.deleted-table form {
+  display: inline;
+}
+
 .security-panel {
   margin-top: 56px;
   display: grid;
@@ -517,6 +538,52 @@
 
 .restore-banner[hidden] {
   display: none;
+}
+
+.revision-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+
+.revision-banner a {
+  font-weight: 700;
+}
+
+.history-card {
+  margin-top: 32px;
+  padding: 28px;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr); /* a long version name can't widen the card past a phone screen */
+}
+
+.history-card h2 {
+  font-size: 1.3rem;
+}
+
+.history-form {
+  justify-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.history-form label {
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.history-form select {
+  font: inherit;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-text);
 }
 
 .editor-form {

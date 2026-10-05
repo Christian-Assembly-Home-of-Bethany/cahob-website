@@ -85,7 +85,8 @@ The security features it needs are well understood (see "Security" below).
 │   ├── login.php / logout.php / language.php (中文 ⇄ English for the admin pages)
 │   ├── edit.php          create/edit form with the Quill editor
 │   ├── preview.php       preview of unsaved text in the public look (new tab)
-│   ├── delete.php        delete confirmation
+│   ├── delete.php        delete confirmation (a delete only hides the message)
+│   ├── restore.php       brings back a deleted message
 │   ├── ping.php          keeps the login alive while the pastor is typing
 │   └── editor.js, admin.js, admin.css
 ├── lib/                  not web-accessible (.htaccess: Require all denied)
@@ -127,9 +128,25 @@ CREATE TABLE messages (
   status       TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published')),
   published_at TEXT,                   -- ISO 8601 UTC; allows back-dating imported posts
   created_at   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  was_published INTEGER NOT NULL DEFAULT 0,  -- 1 once ever published: the slug is then fixed
+  deleted_at   TEXT                        -- set when deleted; NULL again when restored
 );
 CREATE INDEX idx_messages_pub ON messages (status, published_at DESC);
+
+-- A copy of a message each time it's saved, so an earlier version can be brought back.
+CREATE TABLE message_revisions (
+  id           INTEGER PRIMARY KEY,
+  message_id   INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE,
+  title_en     TEXT NOT NULL,
+  body_en      TEXT NOT NULL,
+  title_zh     TEXT NOT NULL,
+  body_zh      TEXT NOT NULL,
+  status       TEXT NOT NULL,
+  published_at TEXT,
+  saved_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_revisions_message ON message_revisions (message_id, id);
 
 CREATE TABLE login_attempts (
   ip           TEXT NOT NULL,
@@ -140,7 +157,20 @@ CREATE INDEX idx_login_attempts ON login_attempts (ip, attempted_at);
 
 The tables are created on first run, so there is no separate install step. SQLite's
 `user_version` records which schema changes a database already has, so later changes can be
-added as numbered migrations in `db.php`. Times are stored in UTC and shown in Pacific time.
+added as numbered migrations in `db.php`. Migration 1 is the first schema; migration 2 adds
+`was_published`, `deleted_at`, and `message_revisions`, and gives each existing message its
+first saved version. Times are stored in UTC and shown in Pacific time.
+
+- **Version history.** Every save (from the editor or the import) adds a row to
+  `message_revisions` with the message as it was saved, unless nothing changed since the last
+  one. Restoring an old version means loading it into the editor and saving it, so it becomes
+  the newest version and the history only ever grows.
+- **Deletes can be undone.** Deleting sets `deleted_at` instead of removing the row. Every
+  public page and the dashboard skip deleted messages, and the version history is kept.
+  Restoring clears `deleted_at`, and the message comes back with the status it had. A deleted
+  message keeps its slug, so restoring it never clashes with a newer message. Only the local
+  tools (`make seed`, `import_blogger.php --replace`) really delete rows, and the versions go
+  with them.
 
 ### Bilingual handling
 
@@ -153,9 +183,10 @@ published once at least one language has a body. A post without a title is shown
 date and opening words in the lists, and by its date as the heading of its own page.
 
 The slug comes from the English title (or the date if there isn't one), cut to about 60
-characters. If that slug is taken, a `-2`, `-3`, etc. is added. While a post is a draft, its
-slug follows its title. Once it's published, the slug never changes, even if the title is
-edited or added later, so links to it keep working.
+characters. If that slug is taken, a `-2`, `-3`, etc. is added. Until a post is first
+published, its slug follows its title. Once it has been published, the slug never changes
+(`was_published`), even if the title is edited or added later, or the post is unpublished,
+renamed, and published again, so links already shared on LINE or WeChat keep working.
 
 - `messages.php` lists posts using the English titles. `messages-zh.php` uses the Chinese
   titles. If a post has no section in that language, the list shows the other language with a
@@ -197,8 +228,10 @@ goes to `/admin/`.
 - **Dashboard** shows every message newest first, marked 草稿 (draft) or 已發佈 (published),
   with its date, which languages are written (中 / EN), and Edit, View, and Delete links, plus a
   **新增信息** (new message) button. Posts without a title show their date and opening words
-  instead. Below the list are the **latest 10 security log entries** (failed logins,
-  lockouts, successful logins).
+  instead. Under the list, a folded **已刪除的信息** (deleted messages) section lists deleted
+  messages with a **還原** (restore) button; it only appears when something is deleted, and
+  opens by itself right after a delete. Below that are the **latest 10 security log entries**
+  (failed logins, lockouts, successful logins).
 - **Editor** has a publish date (defaults to now, Pacific time), then two sections, **中文**
   on the left and **English** on the right, each with its own title (optional) and a WYSIWYG
   body. On a phone the sections stack. The toolbar has headings, bold/italic, numbered and
@@ -208,8 +241,13 @@ goes to `/admin/`.
 - **Buttons.** A draft has **儲存草稿** (save draft), **預覽** (preview), and **發佈** (publish).
   A published message has **更新** (update), **預覽**, and **改回草稿** (unpublish).
   **Preview** opens the text being edited in a new tab with the public look, both languages,
-  without saving anything. **Delete** goes through a confirmation page that suggests
-  unpublishing instead.
+  without saving anything. **Delete** goes through a confirmation page that says the message
+  can be restored later, and suggests unpublishing to just hide it for now.
+- **Version history (版本記錄).** Under the editor, a dropdown lists every saved version of
+  the message by date, time, and status, with the current one marked and greyed out.
+  **載入這個版本** (load this version) puts that version into the editor without saving; a
+  banner says so, with a link back to the current version. Pressing 更新 (or 儲存草稿 for a
+  draft) restores it.
 - **Pasting** from Word or Google Docs keeps headings, bold, italics, lists, centered text,
   dividers, and tables. Fonts, sizes, colors, and other formatting are dropped right away.
 - **Quill details.** Quill 2.0.3 is loaded from jsDelivr, pinned to that version with
@@ -290,8 +328,8 @@ Bash, from the repo folder; the rest is in cPanel.
    uploading, so it includes the newest Blogger posts. Check the list it prints.
 4. **Upload them.** In File Manager → `cahob-data`, click **Upload**, choose
    `dev-data/live-import.sqlite`, then rename it to `messages.sqlite` (replace the file if one
-   is already there). Do this only once, at launch: uploading later would replace anything
-   written on the new site since.
+   is already there). Do this only before the pastor starts writing: uploading later would
+   replace anything written on the new site since.
 5. **Lock down permissions.** Right-click `config.php` and `messages.sqlite` → **Change
    Permissions** → **600**. Set the `cahob-data` folder to **700**.
 6. **Check it.** `https://cahob.org/messages.php` should list the 15 imported messages (not
@@ -394,7 +432,9 @@ show "Messages are coming soon" and nobody can log in.
 7. **Soft launch:** open the one PR into `main`, and merge it once it's approved (after
    confirming). The static pages have no nav links yet, so visitors won't find the new pages.
    Do the one-time server setup above. We test on the live site first with the pastor's
-   account, then delete any test posts.
+   account. A delete only hides a post, so to clear the test posts, redo setup steps 3–4 (a
+   fresh import and upload) before handing over. Review feedback on the PR added fixed links
+   once published, version history, and deletes that can be undone.
 8. **Show the pastor:** set a fresh password on the account, hand it over, and let the pastor
    try writing drafts. Make any changes from that feedback.
 9. **Go live:** a small PR adds Messages / 信息 to the navbar and footer of all six static

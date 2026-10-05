@@ -192,6 +192,21 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('noindex', $html);
     }
 
+    public function testDeletedMessageIsGoneFromThePublicPages(): void
+    {
+        $this->add('kept', ['title_en' => 'Kept message', 'body_en' => '<p>Kept</p>']);
+        $this->add('gone', ['title_en' => 'Deleted message', 'body_en' => '<p>Gone</p>']);
+        db()->exec("UPDATE messages SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'gone'");
+
+        $list = $this->render('messages.php');
+        $this->assertStringContainsString('Kept message', $list);
+        $this->assertStringNotContainsString('Deleted message', $list);
+
+        $html = $this->render('message.php', ['slug' => 'gone']);
+        $this->assertSame(404, http_response_code());
+        $this->assertStringNotContainsString('Deleted message', $html);
+    }
+
     public function testMissingOrMalformedSlugIsNotFound(): void
     {
         $this->assertStringContainsString('找不到這篇信息', $this->render('message.php', ['lang' => 'zh']));
