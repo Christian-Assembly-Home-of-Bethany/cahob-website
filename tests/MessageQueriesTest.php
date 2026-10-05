@@ -46,6 +46,14 @@ final class MessageQueriesTest extends TestCase
         $this->assertSame('middle', find_published($this->pdo, 'middle')['slug']);
     }
 
+    public function testSqlInASlugIsJustASlugThatDoesNotExist(): void
+    {
+        foreach (["' OR 1=1 --", "draft' OR status = 'draft", "x'; DROP TABLE messages; --"] as $attack) {
+            $this->assertNull(find_published($this->pdo, $attack), $attack);
+        }
+        $this->assertSame(3, count_published($this->pdo), 'The table is untouched.');
+    }
+
     public function testDraftsAndMissingSlugsAreNotFound(): void
     {
         $this->assertNull(find_published($this->pdo, 'draft'));

@@ -39,8 +39,13 @@ make down    # stop it
 ```
 
 The first `make up` creates `dev-data/config.php`, a local config with its own throwaway
-database. Without PHP it falls back to Python, and only the static pages work. (Opening the
-HTML files directly won't load the `content/` text files.)
+database. `make seed` fills it with sample messages, and `make dev-password` sets the password
+for the local admin login at http://localhost:8000/admin/ (username `pastor`). Without PHP it
+falls back to Python, and only the static pages work. (Opening the HTML files directly won't
+load the `content/` text files.)
+
+To set the live admin password, run `make password` and paste the printed hash into
+`~/cahob-data/config.php` on the server.
 
 ## Tests
 

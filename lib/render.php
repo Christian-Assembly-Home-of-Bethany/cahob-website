@@ -306,3 +306,135 @@ function not_found_page(string $lang): void
 <?php
     page_footer($lang);
 }
+
+// ---------- Admin pages ----------
+// Admin pages are in Traditional Chinese, with a button in the header that switches them to
+// English (remembered in a cookie). They share the site's fonts and colors but use their own
+// simple header instead of the public navbar.
+
+/** All admin interface text. Every key must exist in both languages. */
+const ADMIN_TEXT = [
+    'zh' => [
+        'html_lang' => 'zh-Hant',
+        'brand' => '信息管理',
+        'switch_to' => 'English',
+        'switch_lang' => 'en',
+        'switch_aria' => 'Switch to English',
+        'log_out' => '登出',
+        'login_title' => '登入',
+        'login_intro' => '在 cahob.org 撰寫並發佈信息。',
+        'username' => '用戶名',
+        'password' => '密碼',
+        'show_password' => '顯示密碼',
+        'hide_password' => '隱藏密碼',
+        'log_in' => '登入',
+        'back_to_messages' => '信息頁面',
+        'wrong_login' => '錯誤：密碼或用戶名不正確',
+        'locked_out' => '嘗試次數過多，請在 %d 分鐘後再試。',
+        'stale_form' => '頁面已過期，請再試一次。',
+        'expired' => '閒置超過兩小時，已自動登出，請重新登入。',
+        'logged_out' => '您已登出。',
+        'no_password' => '尚未設定管理員密碼，請執行 make dev-password。',
+        'dashboard_title' => '管理首頁',
+        'welcome' => '歡迎，%s',
+        'placeholder' => '您已登入。信息列表和編輯器將會在這裡。',
+        'view_messages' => '查看信息頁面',
+    ],
+    'en' => [
+        'html_lang' => 'en',
+        'brand' => 'Messages',
+        'switch_to' => '中文',
+        'switch_lang' => 'zh-Hant',
+        'switch_aria' => '切換至中文',
+        'log_out' => 'Log out',
+        'login_title' => 'Log in',
+        'login_intro' => 'Write and publish messages on cahob.org.',
+        'username' => 'Username',
+        'password' => 'Password',
+        'show_password' => 'Show password',
+        'hide_password' => 'Hide password',
+        'log_in' => 'Log in',
+        'back_to_messages' => 'Messages page',
+        'wrong_login' => 'Error: Wrong password or username',
+        'locked_out' => 'Too many failed attempts. Try again in %d minutes.',
+        'stale_form' => 'This page was open too long. Please try again.',
+        'expired' => 'You were logged out after 2 hours without activity. Please log in again.',
+        'logged_out' => "You're logged out.",
+        'no_password' => 'No admin password is set up yet. Run make dev-password.',
+        'dashboard_title' => 'Dashboard',
+        'welcome' => 'Welcome, %s',
+        'placeholder' => "You're logged in. The message list and editor will be here.",
+        'view_messages' => 'View the Messages page',
+    ],
+];
+
+const ADMIN_LANG_COOKIE = 'cahob_admin_lang';
+
+function admin_lang(): string
+{
+    return ($_COOKIE[ADMIN_LANG_COOKIE] ?? '') === 'en' ? 'en' : 'zh';
+}
+
+/** Admin text in the chosen language, with any %s / %d filled in. */
+function at(string $key, string|int ...$values): string
+{
+    $text = ADMIN_TEXT[admin_lang()][$key];
+    return $values ? sprintf($text, ...$values) : $text;
+}
+
+function admin_header(string $title, ?string $admin = null): void
+{
+    $other = admin_lang() === 'zh' ? 'en' : 'zh';
+    $switchUrl = '/admin/language.php?to=' . $other . '&back=' . rawurlencode((string) ($_SERVER['REQUEST_URI'] ?? '/admin/'));
+    ?>
+<!DOCTYPE html>
+<html lang="<?= at('html_lang') ?>">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title><?= e($title) ?> | CAHOB <?= at('brand') ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&amp;family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&amp;family=Noto+Serif+TC:wght@600&amp;family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css?v=<?= STYLES_VERSION ?>" />
+    <link rel="stylesheet" href="/admin/admin.css?v=<?= STYLES_VERSION ?>" />
+  </head>
+  <body class="admin-page messages-page">
+    <header class="admin-bar">
+      <div class="admin-bar-inner">
+        <a href="/admin/" class="admin-brand"><strong>CAHOB</strong> <span><?= at('brand') ?></span></a>
+        <div class="admin-user">
+          <a href="<?= e($switchUrl) ?>" class="admin-lang" lang="<?= at('switch_lang') ?>" aria-label="<?= at('switch_aria') ?>"><?= at('switch_to') ?></a>
+<?php if ($admin !== null): ?>
+          <span class="admin-name"><?= e($admin) ?></span>
+          <form method="post" action="/admin/logout.php">
+            <?= csrf_field() ?>
+            <button type="submit" class="admin-link-button"><?= at('log_out') ?></button>
+          </form>
+<?php endif; ?>
+        </div>
+      </div>
+    </header>
+    <main class="admin-main">
+<?php
+}
+
+function admin_footer(): void
+{
+    ?>
+    </main>
+    <script src="/admin/admin.js?v=<?= STYLES_VERSION ?>"></script>
+  </body>
+</html>
+<?php
+}
+
+/** A status line, e.g. after logging out or when a form has a problem. */
+function admin_alert(string $kind, string $text): void
+{
+    ?>
+      <p class="admin-alert admin-alert--<?= $kind ?>" role="<?= $kind === 'error' ? 'alert' : 'status' ?>"><?= e($text) ?></p>
+<?php
+}

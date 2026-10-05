@@ -29,6 +29,12 @@ function config_path(string|false $override, string $documentRoot): string
     return dirname($documentRoot) . '/cahob-data/config.php';
 }
 
+/** The folder holding config.php: ~/cahob-data on the server, dev-data/ locally. Sessions and logs live here too. */
+function data_dir(): string
+{
+    return dirname(config_path(getenv('CAHOB_CONFIG'), $_SERVER['DOCUMENT_ROOT'] ?? ''));
+}
+
 function load_config(string $path): array
 {
     if ($path === '' || !is_file($path)) {

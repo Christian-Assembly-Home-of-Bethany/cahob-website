@@ -23,6 +23,18 @@ final class RenderTest extends TestCase
     public function testEveryInterfaceTextExistsInBothLanguages(): void
     {
         $this->assertSame(array_keys(UI_TEXT['en']), array_keys(UI_TEXT['zh']));
+        $this->assertSame(array_keys(ADMIN_TEXT['zh']), array_keys(ADMIN_TEXT['en']));
+    }
+
+    public function testAdminTextIsChineseUnlessEnglishWasChosen(): void
+    {
+        unset($_COOKIE['cahob_admin_lang']);
+        $this->assertSame('登入', at('log_in'));
+        $_COOKIE['cahob_admin_lang'] = 'fr';
+        $this->assertSame('登入', at('log_in'), 'Anything but "en" means Chinese.');
+        $_COOKIE['cahob_admin_lang'] = 'en';
+        $this->assertSame('Try again in 3 minutes.', substr(at('locked_out', 3), -23));
+        unset($_COOKIE['cahob_admin_lang']);
     }
 
     public function testDatesAreShownInPacificTime(): void

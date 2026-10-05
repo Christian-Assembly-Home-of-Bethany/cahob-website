@@ -3,7 +3,7 @@ PID_FILE := .server.pid
 # Local settings and database for the messages CMS (git-ignored, never deployed).
 DEV_CONFIG := dev-data/config.php
 
-.PHONY: up down test seed
+.PHONY: up down test seed password dev-password
 
 # Prefers PHP's built-in server (needed for the messages CMS); falls back to Python for the static pages.
 up: $(DEV_CONFIG)
@@ -34,3 +34,13 @@ $(DEV_CONFIG):
 # Replaces the local database's messages with samples (refuses to run on a non-debug config).
 seed: $(DEV_CONFIG)
 	@CAHOB_CONFIG="$(CURDIR)/$(DEV_CONFIG)" php lib/tools/seed_dev.php
+
+# Prints a password hash to paste into the server's ~/cahob-data/config.php.
+password:
+	@stty -echo 2>/dev/null; printf "New admin password: "; IFS= read -r pw; stty echo 2>/dev/null; echo; \
+	printf '%s' "$$pw" | php lib/tools/hash_password.php
+
+# Sets the password for logging in to the local admin pages.
+dev-password: $(DEV_CONFIG)
+	@stty -echo 2>/dev/null; printf "Local admin password: "; IFS= read -r pw; stty echo 2>/dev/null; echo; \
+	printf '%s' "$$pw" | php lib/tools/hash_password.php $(DEV_CONFIG)
