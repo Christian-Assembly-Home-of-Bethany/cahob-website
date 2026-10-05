@@ -29,7 +29,8 @@ Details in [`content/README.md`](content/README.md).
 The Messages section is a small PHP + SQLite app (see
 [`plans/messages-cms.md`](plans/messages-cms.md)). Shared PHP code lives in `lib/`,
 which the server blocks from the web. The database and the admin password live on the server
-in `~/cahob-data/`, outside the web root, so deploys never touch them.
+in `~/cahob-data/`, outside the web root, so deploys never touch them. To set it up on the
+server, follow "Going live: one-time server setup" in the plan.
 
 ## Previewing locally
 
