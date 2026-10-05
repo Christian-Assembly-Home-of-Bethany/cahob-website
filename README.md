@@ -24,13 +24,42 @@ Details in [`content/README.md`](content/README.md).
 - Styles: `styles.css` · Behavior (nav, animations, content loading): `script.js`
 - Images: `images/` — compress photos to ≤500 KB before adding
 
+## Messages (PHP)
+
+The Messages section is a small PHP + SQLite app (see
+[`plans/messages-cms.md`](plans/messages-cms.md)). Shared PHP code lives in `lib/`,
+which the server blocks from the web. The database and the admin password live on the server
+in `~/cahob-data/`, outside the web root, so deploys never touch them. To set it up on the
+server, follow "Going live: one-time server setup" in the plan.
+
 ## Previewing locally
 
-Run any static server from the repo root, e.g.:
+```
+make up      # http://localhost:8000, with PHP if installed (on Windows, run from Git Bash)
+make down    # stop it
+```
+
+The first `make up` creates `dev-data/config.php`, a local config with its own throwaway
+database. `make seed` fills it with sample messages, and `make dev-password` sets the password
+for the local admin login at http://localhost:8000/admin/ (username `pastor`). Without PHP it
+falls back to Python, and only the static pages work. (Opening the HTML files directly won't
+load the `content/` text files.)
+
+To set the live admin password, run `make password` and paste the printed hash into
+`~/cahob-data/config.php` on the server.
+
+## Importing the old Blogger posts
+
+`make import-preview` reads the public feed of johannavoice.blogspot.com and lists the messages
+it would create, pairing each day's English and Chinese posts into one message. `make import`
+imports them into the local database, replacing what's there (`make seed` restores the sample
+messages). For the live site, import into a new file and upload it to `~/cahob-data/`:
 
 ```
-python3 -m http.server 4173
+php lib/tools/import_blogger.php --db=dev-data/live-import.sqlite
 ```
 
-then open http://localhost:4173. (Opening the HTML files directly won't load
-the `content/` text files.)
+## Tests
+
+PHP 8.2+ and Composer are needed. Run `composer install` once, then `make test` (or
+`composer test`). CI runs the same tests on every PR.

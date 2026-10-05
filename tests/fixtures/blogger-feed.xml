@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- A made-up Blogger feed for the import tests. It copies the structure of the real feed
+     (empty titles, Word markup, Pacific-time dates) but not the pastor's writing. -->
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:openSearch='http://a9.com/-/spec/opensearchrss/1.0/' xmlns:blogger='http://schemas.google.com/blogger/2008' xmlns:app='http://purl.org/atom/app#'>
+  <id>tag:blogger.com,1999:blog-1</id>
+  <title type='text'>Test blog</title>
+
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-zh1</id>
+    <published>2026-07-16T10:59:04.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p class="MsoNormal" align="center" style="text-align:center;mso-outline-level:1"><b><span style="font-size:14.0pt;mso-fareast-language:ZH-TW">測試標題一<o:p></o:p></span></b></p><p class="MsoNormal">&nbsp;<o:p></o:p></p><p class="MsoNormal"><span lang="ZH-TW">這是第一段，有<span style="font-weight:bold">粗體</span>和<span style="font-style:italic">斜體</span>。</span></p><div align="center" class="MsoNormal" style="text-align:center"><hr align="center" size="2" width="100%"></div><div>第二段第一行<br>第二段第二行</div><p class="MsoNormal"><b><span>&nbsp;&nbsp;&nbsp;</span></b><o:p></o:p></p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/07/zh1.html'/>
+  </entry>
+
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-en1</id>
+    <published>2026-07-16T12:06:00.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<div><b>Test Title One</b></div><div><br></div><div>First paragraph with a <a href="https://example.org/page" target="_blank" style="color:blue">link</a>.</div><table border="1" style="border-collapse:collapse"><tbody><tr><td style="padding:4px"><p class="MsoNormal">Week<o:p></o:p></p></td><td>Chapters</td></tr><tr><td>1</td><td>1–4</td></tr></tbody></table><p>Unclosed paragraph<p>Next paragraph</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/07/en1.html'/>
+  </entry>
+
+  <!-- Two pairs on one day, told apart by publish time -->
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-zh2</id>
+    <published>2026-08-07T11:09:00.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>婚姻的測試內容。</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/08/zh2.html'/>
+  </entry>
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-en3</id>
+    <published>2026-08-07T11:21:00.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>Who are we, part three.</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/08/en3.html'/>
+  </entry>
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-en2</id>
+    <published>2026-08-07T11:09:30.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>Marriage test content, mentioning 中文 once.</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/08/en2.html'/>
+  </entry>
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-zh3</id>
+    <published>2026-08-07T11:23:00.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>我們是誰第三篇，提到 YouTube 一次。</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/08/zh3.html'/>
+  </entry>
+
+  <!-- Chinese only -->
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-zh4</id>
+    <published>2026-09-01T09:00:00.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>只有中文的讀經隨筆。</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/09/zh4.html'/>
+  </entry>
+
+  <!-- An hour apart but on different Pacific-time days, so not a pair -->
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-en5</id>
+    <published>2026-09-02T23:30:00.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>Late at night.</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/09/en5.html'/>
+  </entry>
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-zh5</id>
+    <published>2026-09-03T00:30:00.000-07:00</published>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>半夜之後。</p>]]></content>
+    <link rel='alternate' type='text/html' href='https://test.blogspot.com/2026/09/zh5.html'/>
+  </entry>
+
+  <!-- Skipped: a comment and a draft, the way a Blogger export marks them -->
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-comment</id>
+    <published>2026-09-04T09:00:00.000-07:00</published>
+    <category scheme='http://schemas.google.com/g/2005#kind' term='http://schemas.google.com/blogger/2008/kind#comment'/>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>A comment.</p>]]></content>
+  </entry>
+  <entry>
+    <id>tag:blogger.com,1999:blog-1.post-draft</id>
+    <published>2026-09-05T09:00:00.000-07:00</published>
+    <app:control><app:draft>yes</app:draft></app:control>
+    <title type='text'></title>
+    <content type='html'><![CDATA[<p>An unpublished draft.</p>]]></content>
+  </entry>
+</feed>

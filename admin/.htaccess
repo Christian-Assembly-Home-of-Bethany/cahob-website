@@ -1,0 +1,4 @@
+# Admin pages only over HTTPS, so the password and login cookie are never sent in plain text.
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
