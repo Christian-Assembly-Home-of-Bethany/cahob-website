@@ -138,7 +138,7 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('Abiding in the Vine Opening words.', $html);
     }
 
-    public function testMessagePageShowsTheBodyAndLinksToTheOtherLanguage(): void
+    public function testMessagePageShowsTheChosenLanguageThenTheOther(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
 
@@ -146,10 +146,24 @@ final class PagesTest extends TestCase
 
         $this->assertSame(200, http_response_code());
         $this->assertStringContainsString('<title>Both languages | CAHOB</title>', $html);
-        $this->assertStringContainsString('<p>English body</p>', $html);
-        $this->assertStringNotContainsString('中文內容', $html);
         $this->assertStringContainsString('October 2, 2026', $html);
-        $this->assertStringContainsString('href="/message.php?slug=both&amp;lang=zh" class="explore-link"', $html);
+        $this->assertLessThan(strpos($html, '<p>中文內容</p>'), strpos($html, '<p>English body</p>'), 'English first on the English page.');
+        $this->assertStringContainsString('<div class="content-narrow message-second" id="zh" lang="zh-Hant">', $html);
+        $this->assertStringContainsString('<h2>雙語信息</h2>', $html);
+        $this->assertStringContainsString('<a href="#zh" lang="zh-Hant">中文版 <span aria-hidden="true">&darr;</span></a>', $html);
+        $this->assertStringContainsString('href="/message.php?slug=both&amp;lang=zh" class="lang-switch"', $html, 'The top bar still switches the page to Chinese.');
+    }
+
+    public function testChineseMessagePageShowsChineseFirst(): void
+    {
+        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'body_zh' => '<p>中文內容</p>']);
+
+        $html = $this->render('message.php', ['slug' => 'both', 'lang' => 'zh']);
+
+        $this->assertLessThan(strpos($html, '<p>English body</p>'), strpos($html, '<p>中文內容</p>'));
+        $this->assertStringContainsString('id="en" lang="en"', $html);
+        $this->assertStringContainsString('<h2>Both languages</h2>', $html);
+        $this->assertStringContainsString('<h1 class="hero-title fade-up">2026年10月2日</h1>', $html, 'No Chinese title, so the date is the heading.');
     }
 
     public function testMessagePageFallsBackToTheWrittenLanguage(): void
@@ -161,7 +175,9 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('This message is available in Chinese only.', $html);
         $this->assertStringContainsString('<article class="content-narrow message-body" lang="zh-Hant">', $html);
         $this->assertStringContainsString('<p>中文內容</p>', $html);
-        $this->assertStringNotContainsString('class="explore-link" lang="zh-Hant"', $html, 'No link to a Chinese version that is the same page.');
+        $this->assertSame(1, substr_count($html, '<p>中文內容</p>'), 'Shown once, not again as a second language.');
+        $this->assertStringNotContainsString('message-second', $html);
+        $this->assertStringNotContainsString('message-jump', $html);
     }
 
     public function testDraftMessageIsNotFound(): void

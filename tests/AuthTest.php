@@ -153,6 +153,37 @@ final class AuthTest extends TestCase
         }
     }
 
+    public function testSecurityLogIsReadBackNewestFirst(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'cahob-log-');
+        try {
+            file_put_contents($file,
+                security_log_line('LOGIN_FAILED', '198.51.100.7', 'wrong password', $this->now, 'Bot/1.0')
+                . "a line that isn't an entry\n"
+                . security_log_line('LOGIN_OK', '203.0.113.5', '', $this->now + 60, 'Firefox'));
+            $entries = read_security_log($file, 10);
+            $this->assertCount(2, $entries);
+            $this->assertSame(['time' => '2026-10-04 05:01:00 PDT', 'event' => 'LOGIN_OK', 'ip' => '203.0.113.5', 'details' => '', 'agent' => 'Firefox'], $entries[0]);
+            $this->assertSame('wrong password', $entries[1]['details']);
+            $this->assertCount(1, read_security_log($file, 1));
+        } finally {
+            unlink($file);
+        }
+        $this->assertSame([], read_security_log('/no/such/security.log'));
+    }
+
+    public function testSecurityDetailsAreTranslatedForTheChineseAdmin(): void
+    {
+        require_once __DIR__ . '/../lib/render.php';
+        unset($_COOKIE['cahob_admin_lang']);
+        $this->assertSame('密碼錯誤', security_details('wrong password'));
+        $this->assertSame('15 分鐘內登入失敗 5 次，鎖定 14 分鐘', security_details('5 failed logins in 15 minutes; locked for 14 minutes'));
+        $this->assertSame('something new', security_details('something new'));
+        $_COOKIE['cahob_admin_lang'] = 'en';
+        $this->assertSame('wrong password', security_details('wrong password'));
+        unset($_COOKIE['cahob_admin_lang']);
+    }
+
     public function testFailuresOlderThanADayAreDeleted(): void
     {
         $this->failAt(2 * 86400);

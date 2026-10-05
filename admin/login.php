@@ -9,8 +9,10 @@ require_once __DIR__ . '/../lib/auth.php';
 require_once __DIR__ . '/../lib/render.php';
 
 send_admin_headers();
+// Where to go after logging in: back to the admin page that sent us here, or the dashboard.
+$next = safe_admin_path($_POST['next'] ?? $_GET['next'] ?? '');
 if (current_admin() !== null) {
-    redirect('/admin/');
+    redirect($next);
 }
 
 $alert = null;
@@ -29,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         clear_failed_logins(db(), $ip);
         log_in($username);
         security_log('LOGIN_OK');
-        redirect('/admin/');
+        redirect($next);
     } else {
         if ($lockedFor > 0) {
             security_log('BLOCKED', 'tried to log in while locked out');
@@ -62,6 +64,7 @@ admin_header(at('login_title'));
 } ?>
         <form method="post" action="/admin/login.php" class="admin-form">
           <?= csrf_field() ?>
+          <input type="hidden" name="next" value="<?= e($next) ?>" />
           <label for="username"><?= at('username') ?></label>
           <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required value="<?= e($username) ?>"<?= $username === '' ? ' autofocus' : '' ?> />
           <label for="password"><?= at('password') ?></label>

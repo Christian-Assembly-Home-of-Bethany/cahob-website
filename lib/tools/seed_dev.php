@@ -31,6 +31,8 @@ $samples = [
             <h2>1. Crucified with Christ</h2>
             <p>God’s way is not to improve us but to replace us. When Christ died, we died with Him. This is a fact accomplished on the cross, and it becomes our experience as we turn from ourselves to the Lord.</p>
             <h2>2. Christ Lives in Me</h2>
+            <blockquote>“I am the vine; you are the branches.</blockquote>
+            <blockquote>He who abides in Me and I in him, he bears much fruit; for apart from Me you can do nothing.” (John 15:5)</blockquote>
             <p>The same Christ who died for us now lives in us. Day by day He wants to:</p>
             <ol>
             <li>be our life in our daily walk;</li>
@@ -52,6 +54,8 @@ $samples = [
             <h2>一、與基督同釘十字架</h2>
             <p>神的路不是改良我們，乃是頂替我們。基督死的時候，我們也與祂同死。這是在十字架上已經完成的事實，當我們從自己轉向主時，就成了我們的經歷。</p>
             <h2>二、基督在我裡面活著</h2>
+            <blockquote>「我是葡萄樹，你們是枝子。</blockquote>
+            <blockquote>住在我裡面的，我也住在他裡面，這人就多結果子；因為離了我，你們就不能作甚麼。」（約翰福音十五章5節）</blockquote>
             <p>那為我們死的基督，如今活在我們裡面。祂天天渴望：</p>
             <ol>
             <li>在日常生活中作我們的生命；</li>

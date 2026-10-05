@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 3;
+const STYLES_VERSION = 5;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -146,7 +146,7 @@ function excerpt(string $html, int $width = 240): string
 /** A UTC timestamp from the database, shown as a Pacific-time date. */
 function format_date(string $utc, string $lang): string
 {
-    $date = (new DateTimeImmutable($utc))->setTimezone(new DateTimeZone('America/Los_Angeles'));
+    $date = (new DateTimeImmutable($utc, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Los_Angeles'));
     return $lang === 'zh'
         ? sprintf('%d年%d月%d日', $date->format('Y'), $date->format('n'), $date->format('j'))
         : $date->format('F j, Y');
@@ -155,7 +155,7 @@ function format_date(string $utc, string $lang): string
 /** The value for a <time datetime="..."> attribute. */
 function iso_date(string $utc): string
 {
-    return (new DateTimeImmutable($utc))->setTimezone(new DateTimeZone('America/Los_Angeles'))->format('Y-m-d');
+    return (new DateTimeImmutable($utc, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Los_Angeles'))->format('Y-m-d');
 }
 
 function has_both_languages(array $message): bool
@@ -321,6 +321,7 @@ const ADMIN_TEXT = [
         'switch_lang' => 'en',
         'switch_aria' => 'Switch to English',
         'log_out' => '登出',
+        // Login
         'login_title' => '登入',
         'login_intro' => '在 cahob.org 撰寫並發佈信息。',
         'username' => '用戶名',
@@ -335,10 +336,93 @@ const ADMIN_TEXT = [
         'expired' => '閒置超過兩小時，已自動登出，請重新登入。',
         'logged_out' => '您已登出。',
         'no_password' => '尚未設定管理員密碼，請執行 make dev-password。',
-        'dashboard_title' => '管理首頁',
-        'welcome' => '歡迎，%s',
-        'placeholder' => '您已登入。信息列表和編輯器將會在這裡。',
+        // Dashboard
+        'messages_title' => '信息',
+        'new_message' => '新增信息',
         'view_messages' => '查看信息頁面',
+        'col_title' => '標題',
+        'col_status' => '狀態',
+        'col_date' => '日期',
+        'col_languages' => '語言',
+        'col_actions' => '操作',
+        'status_draft' => '草稿',
+        'status_published' => '已發佈',
+        'untitled' => '無標題',
+        'edit' => '編輯',
+        'view' => '查看',
+        'delete' => '刪除',
+        'new_tab' => '（在新分頁開啟）',
+        'no_messages' => '還沒有任何信息。按「新增信息」開始撰寫。',
+        'notice_deleted' => '已刪除信息。',
+        'security_title' => '安全紀錄',
+        'security_intro' => '最近 %d 筆登入紀錄，最新的在最上面。完整紀錄存放在伺服器的 cahob-data/logs/security.log。',
+        'security_empty' => '目前沒有紀錄。',
+        'col_time' => '時間',
+        'col_event' => '事件',
+        'col_ip' => 'IP 位址',
+        'col_details' => '說明',
+        'event_LOGIN_OK' => '登入成功',
+        'event_LOGIN_FAILED' => '登入失敗',
+        'event_LOCKED_OUT' => '已鎖定',
+        'event_BLOCKED' => '鎖定中仍嘗試',
+        // Editor
+        'new_title' => '新增信息',
+        'edit_title' => '編輯信息',
+        'back_to_list' => '返回信息列表',
+        'publish_date' => '發佈日期',
+        'publish_date_hint' => '太平洋時間',
+        'section_zh' => '中文',
+        'section_en' => '英文',
+        'title_label' => '標題（可留空）',
+        'body_label' => '內容',
+        'needs_js' => '編輯器需要啟用 JavaScript。',
+        'btn_save_draft' => '儲存草稿',
+        'btn_publish' => '發佈',
+        'btn_update' => '更新',
+        'btn_unpublish' => '改回草稿',
+        'btn_preview' => '預覽',
+        'status_line_draft' => '草稿：尚未公開',
+        'status_line_published' => '已發佈',
+        'view_public' => '查看公開頁面',
+        'notice_saved' => '已儲存草稿。',
+        'notice_published' => '已發佈！',
+        'notice_updated' => '已更新。',
+        'notice_unpublished' => '已改回草稿，訪客看不到這篇信息了。',
+        'error_date' => '請輸入正確的發佈日期和時間。',
+        'error_needs_body' => '發佈前，至少要在一種語言寫下內容。',
+        'error_empty' => '請先輸入標題或內容。',
+        'not_found_admin' => '找不到這篇信息，可能已被刪除。',
+        'restore_found' => '這篇信息有一份尚未儲存的版本（{time}）。',
+        'restore' => '還原',
+        'discard' => '捨棄',
+        'session_lost' => '登入已過期。您的內容已暫存在這個瀏覽器中，重新登入後可以還原。',
+        'log_in_again' => '重新登入',
+        'tb_h2' => '大標題',
+        'tb_h3' => '小標題',
+        'tb_bold' => '粗體',
+        'tb_italic' => '斜體',
+        'tb_ol' => '編號清單',
+        'tb_ul' => '項目清單',
+        'tb_scripture' => '經文側欄：文字往右內縮，左側加一條線',
+        'tb_scripture_label' => '經文',
+        'tb_link' => '連結',
+        'tb_center' => '置中',
+        'tb_divider' => '分隔線',
+        'tb_table' => '插入表格',
+        'tb_row' => '在下方新增一列',
+        'tb_col' => '在右邊新增一欄',
+        'tb_table_delete' => '刪除表格',
+        'tb_clean' => '清除格式',
+        // Delete
+        'delete_title' => '刪除信息',
+        'delete_question' => '確定要刪除這篇信息嗎？',
+        'delete_warning' => '刪除後無法復原。如果只是暫時不想公開，可以改回草稿。',
+        'delete_confirm' => '刪除',
+        'cancel' => '取消',
+        // Preview
+        'preview_title' => '預覽',
+        'preview_notice' => '預覽：這是目前編輯中的內容，尚未儲存，訪客看不到。',
+        'preview_empty' => '還沒有內容可以預覽。',
     ],
     'en' => [
         'html_lang' => 'en',
@@ -347,6 +431,7 @@ const ADMIN_TEXT = [
         'switch_lang' => 'zh-Hant',
         'switch_aria' => '切換至中文',
         'log_out' => 'Log out',
+        // Login
         'login_title' => 'Log in',
         'login_intro' => 'Write and publish messages on cahob.org.',
         'username' => 'Username',
@@ -361,10 +446,93 @@ const ADMIN_TEXT = [
         'expired' => 'You were logged out after 2 hours without activity. Please log in again.',
         'logged_out' => "You're logged out.",
         'no_password' => 'No admin password is set up yet. Run make dev-password.',
-        'dashboard_title' => 'Dashboard',
-        'welcome' => 'Welcome, %s',
-        'placeholder' => "You're logged in. The message list and editor will be here.",
+        // Dashboard
+        'messages_title' => 'Messages',
+        'new_message' => 'New message',
         'view_messages' => 'View the Messages page',
+        'col_title' => 'Title',
+        'col_status' => 'Status',
+        'col_date' => 'Date',
+        'col_languages' => 'Languages',
+        'col_actions' => 'Actions',
+        'status_draft' => 'Draft',
+        'status_published' => 'Published',
+        'untitled' => 'No title',
+        'edit' => 'Edit',
+        'view' => 'View',
+        'delete' => 'Delete',
+        'new_tab' => '(opens in a new tab)',
+        'no_messages' => 'No messages yet. Click "New message" to write one.',
+        'notice_deleted' => 'Message deleted.',
+        'security_title' => 'Security log',
+        'security_intro' => 'The latest %d login events, newest first. The full log is on the server in cahob-data/logs/security.log.',
+        'security_empty' => 'Nothing logged yet.',
+        'col_time' => 'Time',
+        'col_event' => 'Event',
+        'col_ip' => 'IP address',
+        'col_details' => 'Details',
+        'event_LOGIN_OK' => 'Logged in',
+        'event_LOGIN_FAILED' => 'Failed login',
+        'event_LOCKED_OUT' => 'Locked out',
+        'event_BLOCKED' => 'Tried while locked out',
+        // Editor
+        'new_title' => 'New message',
+        'edit_title' => 'Edit message',
+        'back_to_list' => 'Back to messages',
+        'publish_date' => 'Publish date',
+        'publish_date_hint' => 'Pacific time',
+        'section_zh' => 'Chinese',
+        'section_en' => 'English',
+        'title_label' => 'Title (optional)',
+        'body_label' => 'Text',
+        'needs_js' => 'The editor needs JavaScript turned on.',
+        'btn_save_draft' => 'Save draft',
+        'btn_publish' => 'Publish',
+        'btn_update' => 'Update',
+        'btn_unpublish' => 'Unpublish',
+        'btn_preview' => 'Preview',
+        'status_line_draft' => 'Draft: not public yet',
+        'status_line_published' => 'Published',
+        'view_public' => 'View the public page',
+        'notice_saved' => 'Draft saved.',
+        'notice_published' => 'Published!',
+        'notice_updated' => 'Updated.',
+        'notice_unpublished' => 'Unpublished. Visitors can no longer see this message.',
+        'error_date' => 'Please enter a valid publish date and time.',
+        'error_needs_body' => 'Write the text in at least one language before publishing.',
+        'error_empty' => 'Please enter a title or some text first.',
+        'not_found_admin' => "This message wasn't found. It may have been deleted.",
+        'restore_found' => "There's an unsaved version of this message ({time}).",
+        'restore' => 'Restore',
+        'discard' => 'Discard',
+        'session_lost' => 'Your login expired. Your text is kept in this browser and can be restored after you log in again.',
+        'log_in_again' => 'Log in again',
+        'tb_h2' => 'Heading',
+        'tb_h3' => 'Subheading',
+        'tb_bold' => 'Bold',
+        'tb_italic' => 'Italic',
+        'tb_ol' => 'Numbered list',
+        'tb_ul' => 'Bulleted list',
+        'tb_scripture' => 'Scripture sidebar: moves the text right with a bar on the left',
+        'tb_scripture_label' => 'Scripture',
+        'tb_link' => 'Link',
+        'tb_center' => 'Center',
+        'tb_divider' => 'Divider',
+        'tb_table' => 'Insert table',
+        'tb_row' => 'Add a row below',
+        'tb_col' => 'Add a column to the right',
+        'tb_table_delete' => 'Delete table',
+        'tb_clean' => 'Clear formatting',
+        // Delete
+        'delete_title' => 'Delete message',
+        'delete_question' => 'Delete this message?',
+        'delete_warning' => "This can't be undone. To hide it for now instead, unpublish it.",
+        'delete_confirm' => 'Delete',
+        'cancel' => 'Cancel',
+        // Preview
+        'preview_title' => 'Preview',
+        'preview_notice' => "Preview: this is the text you're editing. It isn't saved, and visitors can't see it.",
+        'preview_empty' => "There's nothing to preview yet.",
     ],
 ];
 
@@ -382,7 +550,24 @@ function at(string $key, string|int ...$values): string
     return $values ? sprintf($text, ...$values) : $text;
 }
 
-function admin_header(string $title, ?string $admin = null): void
+/** A security log entry's details in the admin language (the log itself is in English). */
+function security_details(string $details): string
+{
+    if (admin_lang() === 'en') {
+        return $details;
+    }
+    if (preg_match('/^(\d+) failed logins in 15 minutes; locked for (\d+) minutes$/', $details, $m)) {
+        return "15 分鐘內登入失敗 {$m[1]} 次，鎖定 {$m[2]} 分鐘";
+    }
+    return [
+        'wrong password' => '密碼錯誤',
+        'unknown username' => '用戶名錯誤',
+        'tried to log in while locked out' => '在鎖定期間嘗試登入',
+    ][$details] ?? $details;
+}
+
+/** $head is extra markup for <head>, e.g. the editor's stylesheet. It comes before admin.css, so admin.css can restyle it. */
+function admin_header(string $title, ?string $admin = null, string $head = ''): void
 {
     $other = admin_lang() === 'zh' ? 'en' : 'zh';
     $switchUrl = '/admin/language.php?to=' . $other . '&back=' . rawurlencode((string) ($_SERVER['REQUEST_URI'] ?? '/admin/'));
@@ -399,6 +584,7 @@ function admin_header(string $title, ?string $admin = null): void
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&amp;family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&amp;family=Noto+Serif+TC:wght@600&amp;family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
     <link rel="stylesheet" href="/styles.css?v=<?= STYLES_VERSION ?>" />
+<?= $head === '' ? '' : $head . PHP_EOL ?>
     <link rel="stylesheet" href="/admin/admin.css?v=<?= STYLES_VERSION ?>" />
   </head>
   <body class="admin-page messages-page">
@@ -421,11 +607,13 @@ function admin_header(string $title, ?string $admin = null): void
 <?php
 }
 
-function admin_footer(): void
+/** $scripts is extra markup before </body>, e.g. the editor's scripts. */
+function admin_footer(string $scripts = ''): void
 {
     ?>
     </main>
     <script src="/admin/admin.js?v=<?= STYLES_VERSION ?>"></script>
+<?= $scripts === '' ? '' : $scripts . PHP_EOL ?>
   </body>
 </html>
 <?php

@@ -40,6 +40,22 @@ function security_log_line(string $event, string $ip, string $details, int $time
     return sprintf("%s  %-12s  %-15s  %s  \"%s\"\n", $when, $event, $clean($ip, 45), $details, $clean($userAgent, 150));
 }
 
+/** The newest entries of a security log file, newest first, split into their columns. */
+function read_security_log(string $file, int $limit = 10): array
+{
+    if (!is_file($file)) {
+        return [];
+    }
+    $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    $entries = [];
+    foreach (array_reverse(array_slice($lines, -$limit)) as $line) {
+        if (preg_match('/^(\S+ \S+ \S+)  (\S+)\s+(\S+)\s+(.*?)\s*"(.*)"$/u', $line, $m)) {
+            $entries[] = ['time' => $m[1], 'event' => $m[2], 'ip' => $m[3], 'details' => $m[4], 'agent' => $m[5]];
+        }
+    }
+    return $entries;
+}
+
 /** Appends to logs/security.log, keeping one older file (security.log.1) once it passes 1 MB. */
 function write_security_log(string $dir, string $line, int $maxBytes = 1_000_000): void
 {
@@ -226,11 +242,17 @@ function require_admin(): string
     send_admin_headers();
     $admin = current_admin();
     if ($admin === null) {
-        $expired = !empty($_SESSION['admin']);
-        if ($expired) {
+        $query = [];
+        if (!empty($_SESSION['admin'])) {
             log_out();
+            $query['expired'] = '1';
         }
-        redirect('/admin/login.php' . ($expired ? '?expired=1' : ''));
+        // Come back to this page after logging in (e.g. the editor, if the session ran out).
+        $here = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if ($here !== '/admin/' && safe_admin_path($here) === $here) {
+            $query['next'] = $here;
+        }
+        redirect('/admin/login.php' . ($query ? '?' . http_build_query($query) : ''));
     }
     return $admin;
 }

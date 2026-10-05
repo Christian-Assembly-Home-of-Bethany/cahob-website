@@ -1021,11 +1021,22 @@ html[lang="zh-Hant"] .message-meta {
   margin-bottom: 8px;
 }
 
+/* Scripture sidebar (the editor's 經文 button): indented, with a bar on the left */
 .message-body blockquote {
   margin: 0 0 26px;
-  padding: 4px 0 4px 24px;
-  border-left: 3px solid var(--color-accent-light);
-  color: var(--color-text-light);
+  padding: 6px 0 6px 28px;
+  border-left: 3px solid var(--color-accent);
+  color: var(--color-text);
+}
+
+/* The editor saves each line of a passage as its own blockquote; join them into one bar. */
+.message-body blockquote:has(+ blockquote) {
+  margin-bottom: 0;
+  padding-bottom: 10px;
+}
+
+.message-body blockquote + blockquote {
+  padding-top: 0;
 }
 
 .message-body blockquote p:last-child {
@@ -1101,4 +1112,23 @@ html[lang="zh-Hant"] .message-meta {
     grid-row: 1;
     text-align: center;
   }
+}
+
+/* The other language, shown under the first one (message page and admin preview) */
+.message-jump {
+  margin-bottom: 20px;
+  text-align: right;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.message-second {
+  margin-top: 64px;
+  margin-bottom: 24px;
+  padding-top: 32px;
+  border-top: 1px solid var(--color-border);
+}
+
+.message-second h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
 }

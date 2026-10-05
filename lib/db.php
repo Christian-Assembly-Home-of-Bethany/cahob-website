@@ -84,3 +84,91 @@ function find_published(PDO $pdo, string $slug): ?array
     $query->execute([$slug]);
     return $query->fetch() ?: null;
 }
+
+// ---------- Admin: all messages, saving, deleting ----------
+
+/** Every message, drafts included, newest first. */
+function all_messages(PDO $pdo): array
+{
+    return $pdo->query('SELECT * FROM messages ORDER BY COALESCE(published_at, created_at) DESC, id DESC')->fetchAll();
+}
+
+function find_message(PDO $pdo, int $id): ?array
+{
+    $query = $pdo->prepare('SELECT * FROM messages WHERE id = ?');
+    $query->execute([$id]);
+    return $query->fetch() ?: null;
+}
+
+/** A URL slug from an English title: lowercase words joined by hyphens, about 60 characters at most. */
+function slugify(string $title): string
+{
+    $slug = strtolower(str_replace(["'", '’'], '', $title));
+    $slug = trim(preg_replace('/[^a-z0-9]+/', '-', $slug), '-');
+    if (strlen($slug) > 60) {
+        $cut = substr($slug, 0, 61);
+        $slug = substr($cut, 0, strrpos($cut, '-') ?: 60);
+    }
+    return trim($slug, '-');
+}
+
+/** $base, or $base-2, $base-3, ... if another message already uses it. */
+function unique_slug(PDO $pdo, string $base, ?int $exceptId = null): string
+{
+    $taken = $pdo->prepare('SELECT 1 FROM messages WHERE slug = ? AND id IS NOT ?');
+    for ($n = 1; ; $n++) {
+        $slug = $n === 1 ? $base : "$base-$n";
+        $taken->execute([$slug, $exceptId]);
+        if ($taken->fetchColumn() === false) {
+            return $slug;
+        }
+    }
+}
+
+/**
+ * Inserts or updates a message and returns its id. While a message is a draft its slug follows
+ * the English title (or the date when there's no English title). Once it has been saved as
+ * published, the slug never changes, so links to it keep working.
+ *
+ * $message has title_en, body_en, title_zh, body_zh (already sanitized), status, published_at.
+ */
+function save_message(PDO $pdo, array $message, ?array $existing = null): int
+{
+    $slug = $existing['slug'] ?? null;
+    if ($existing === null || $existing['status'] !== 'published') {
+        $base = slugify($message['title_en']);
+        if ($base === '') {
+            $base = (new DateTimeImmutable($message['published_at'], new DateTimeZone('UTC')))
+                ->setTimezone(new DateTimeZone('America/Los_Angeles'))->format('Y-m-d');
+        }
+        $slug = unique_slug($pdo, $base, $existing['id'] ?? null);
+    }
+
+    $values = [
+        'slug' => $slug,
+        'title_en' => $message['title_en'],
+        'body_en' => $message['body_en'],
+        'title_zh' => $message['title_zh'],
+        'body_zh' => $message['body_zh'],
+        'status' => $message['status'],
+        'published_at' => $message['published_at'],
+    ];
+    if ($existing === null) {
+        $pdo->prepare(
+            'INSERT INTO messages (slug, title_en, body_en, title_zh, body_zh, status, published_at)
+             VALUES (:slug, :title_en, :body_en, :title_zh, :body_zh, :status, :published_at)'
+        )->execute($values);
+        return (int) $pdo->lastInsertId();
+    }
+    $pdo->prepare(
+        'UPDATE messages SET slug = :slug, title_en = :title_en, body_en = :body_en, title_zh = :title_zh,
+         body_zh = :body_zh, status = :status, published_at = :published_at, updated_at = CURRENT_TIMESTAMP
+         WHERE id = :id'
+    )->execute($values + ['id' => $existing['id']]);
+    return (int) $existing['id'];
+}
+
+function delete_message(PDO $pdo, int $id): void
+{
+    $pdo->prepare('DELETE FROM messages WHERE id = ?')->execute([$id]);
+}

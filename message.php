@@ -1,6 +1,7 @@
 <?php
-// One message: message.php?slug=...&lang=en|zh. Shows the requested language, or the other
-// one if this message wasn't written in it.
+// One message: message.php?slug=...&lang=en|zh. Shows the requested language first, then the
+// other language below it. If the message wasn't written in the requested language, the
+// other one is shown alone.
 
 declare(strict_types=1);
 
@@ -19,6 +20,12 @@ if ($message === null) {
 $section = message_section($message, $lang);
 $heading = display_title($section, $message, $lang);
 $contentLang = t($section['lang'], 'html_lang');
+
+// The other language, shown under the first one when it was written too.
+$secondLang = other_lang($section['lang']);
+$second = !$section['fallback'] && !html_is_blank($message['body_' . $secondLang])
+    ? message_section($message, $secondLang)
+    : null;
 
 page_header(
     $lang,
@@ -39,16 +46,27 @@ page_hero(
 <?php if ($section['fallback']): ?>
         <p class="content-narrow message-notice"><?= t($lang, 'only_other') ?></p>
 <?php endif; ?>
+<?php if ($second !== null): ?>
+        <p class="content-narrow message-jump"><a href="#<?= $secondLang ?>" lang="<?= t($secondLang, 'html_lang') ?>"><?= t($lang, 'other_version') ?> <span aria-hidden="true">&darr;</span></a></p>
+<?php endif; ?>
         <article class="content-narrow message-body" lang="<?= $contentLang ?>">
 <?= $section['body'] ?>
 
         </article>
+<?php if ($second !== null): ?>
+
+        <div class="content-narrow message-second" id="<?= $secondLang ?>" lang="<?= t($secondLang, 'html_lang') ?>">
+          <p class="message-meta"><?= t($lang, 'other_version') ?></p>
+          <h2><?= e(display_title($second, $message, $secondLang)) ?></h2>
+        </div>
+        <article class="content-narrow message-body" lang="<?= t($secondLang, 'html_lang') ?>">
+<?= $second['body'] ?>
+
+        </article>
+<?php endif; ?>
 
         <nav class="content-narrow message-nav" aria-label="<?= t($lang, 'messages') ?>">
           <a href="<?= list_url($lang) ?>" class="explore-link"><span aria-hidden="true">&larr;</span> <?= t($lang, 'all') ?></a>
-<?php if (has_both_languages($message)): ?>
-          <a href="<?= e(message_url($message, other_lang($lang))) ?>" class="explore-link" lang="<?= t($lang, 'other_version_lang') ?>"><?= t($lang, 'other_version') ?> <span aria-hidden="true">&rarr;</span></a>
-<?php endif; ?>
         </nav>
       </div>
     </section>
