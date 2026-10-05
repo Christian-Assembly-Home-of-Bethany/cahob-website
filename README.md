@@ -47,6 +47,17 @@ load the `content/` text files.)
 To set the live admin password, run `make password` and paste the printed hash into
 `~/cahob-data/config.php` on the server.
 
+## Importing the old Blogger posts
+
+`make import-preview` reads the public feed of johannavoice.blogspot.com and lists the messages
+it would create, pairing each day's English and Chinese posts into one message. `make import`
+imports them into the local database, replacing what's there (`make seed` restores the sample
+messages). For the live site, import into a new file and upload it to `~/cahob-data/`:
+
+```
+php lib/tools/import_blogger.php --db=dev-data/live-import.sqlite
+```
+
 ## Tests
 
 PHP 8.2+ and Composer are needed. Run `composer install` once, then `make test` (or

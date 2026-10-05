@@ -37,3 +37,4 @@ jobs:
             phpunit.xml
             lib/tools/dev_router.php
             lib/tools/seed_dev.php
+            lib/tools/import_blogger.php
