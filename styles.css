@@ -1132,3 +1132,20 @@ html[lang="zh-Hant"] .message-meta {
 .message-second h2 {
   font-size: clamp(1.6rem, 3.5vw, 2.1rem);
 }
+
+/* Sign-in button for the pastor: top right, just under the header image, lined up with
+   the right edge of the message list */
+.message-signin {
+  max-width: 760px;
+  padding-top: 20px;
+  text-align: right;
+}
+
+.message-signin .btn {
+  padding: 9px 22px;
+  font-size: 0.8rem;
+}
+
+.message-signin + .section {
+  padding-top: 40px;
+}

@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 5;
+const STYLES_VERSION = 7;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -51,6 +51,7 @@ const UI_TEXT = [
         'not_found' => 'Message not found',
         'not_found_text' => 'It may have been moved or removed.',
         'see_all' => 'See all messages',
+        'sign_in' => 'Sign in',
     ],
     'zh' => [
         'html_lang' => 'zh-Hant',
@@ -85,6 +86,7 @@ const UI_TEXT = [
         'not_found' => '找不到這篇信息',
         'not_found_text' => '它可能已被移動或刪除。',
         'see_all' => '查看所有信息',
+        'sign_in' => '登入',
     ],
 ];
 
