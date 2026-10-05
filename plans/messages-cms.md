@@ -331,10 +331,11 @@ post are skipped.
   *Marriage*). A post with no partner becomes a one-language message.
 - **Word cleanup** runs before sanitizing: `<div>`s become paragraphs, `align="center"` and
   `text-align: center` become centering, bold and italic spans become `strong` and `em`,
-  Word-only tags like `<o:p>` are dropped, and **empty spacing paragraphs are removed** (the
-  site's paragraphs already have space after them). The result then goes through the same
-  HTML Purifier rules as new posts. On the current 30 posts this keeps all bold (1,409), all
-  dividers (72), both tables, and all 13 links, and loses no text.
+  Word-only tags like `<o:p>` and bold wrapped around nothing but spaces are dropped, and
+  **empty spacing paragraphs are removed** (the site's paragraphs already have space after
+  them). The result then goes through the same HTML Purifier rules as new posts. On the
+  current 30 posts this keeps all the bold text (1,097 bold runs), all dividers (72), both
+  tables, and all 13 links, and loses no text.
 
 `make import-preview` (a dry run) prints each planned message: its date, and the opening words
 and URL of each Blogger post merged into it. `make import` imports into the local database,

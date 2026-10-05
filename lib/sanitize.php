@@ -39,7 +39,14 @@ function sanitize_html(string $html): string
 {
     // The editor writes every space as &nbsp;, which would stop English lines from wrapping.
     $html = str_replace(['&nbsp;', '&#160;', "\u{00A0}"], ' ', $html);
+    // Word's namespaced tags (<o:p>, <w:…>) are parsed differently by different libxml
+    // versions, so drop the tags themselves (keeping their text) to get the same result on
+    // every server.
+    $html = preg_replace('#</?[a-z][a-z0-9]*:[a-z0-9_-]+(?:\s[^>]*)?/?>#i', '', $html);
     $clean = html_purifier()->purify($html);
+    // Repairing broken markup can leave completely empty paragraphs. (The editor's blank
+    // lines are <p><br></p> and stay.)
+    $clean = preg_replace('#<p(?: style="[^"]*")?>\s*</p>#', '', $clean);
 
     // The only style kept is centering; left/right/justify alignment is dropped.
     $clean = preg_replace_callback(
