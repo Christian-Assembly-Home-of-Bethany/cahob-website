@@ -1114,14 +1114,7 @@ html[lang="zh-Hant"] .message-meta {
   }
 }
 
-/* The other language, shown under the first one (message page and admin preview) */
-.message-jump {
-  margin-bottom: 20px;
-  text-align: right;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
+/* The admin preview shows the other language under the first one */
 .message-second {
   margin-top: 64px;
   margin-bottom: 24px;
