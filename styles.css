@@ -1280,7 +1280,28 @@ html[lang="zh-Hant"] .message-meta {
     break-inside: avoid;
   }
 
-  .message-body a {
-    color: inherit;
+  /* Black text and grey lines instead of the site's blues, for black-and-white printers */
+  .hero-title,
+  .hero-tagline,
+  .message-body,
+  .message-body * {
+    color: #000 !important;
+  }
+
+  .message-body blockquote {
+    border-left-color: #777;
+  }
+
+  .message-body hr {
+    background: #999;
+  }
+
+  .message-body th,
+  .message-body td {
+    border-color: #999;
+  }
+
+  .message-body th {
+    background: #eee;
   }
 }
