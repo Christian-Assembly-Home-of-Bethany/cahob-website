@@ -109,8 +109,20 @@ final class EditorTest extends TestCase
         $this->assertSame(['error_needs_body'], message_errors($titleOnly, 'publish'));
         $this->assertSame([], message_errors($titleOnly, 'draft'), 'A draft can be just a title.');
 
-        $chineseOnly = message_from_form($this->form(['body_zh' => '<p>內容</p>']));
-        $this->assertSame([], message_errors($chineseOnly, 'publish'), 'Titles are optional and one language is enough.');
+        $chineseOnly = message_from_form($this->form(['title_zh' => '標題', 'body_zh' => '<p>內容</p>']));
+        $this->assertSame([], message_errors($chineseOnly, 'publish'), 'One language is enough.');
+    }
+
+    public function testPublishingNeedsATitleForEachLanguageWithText(): void
+    {
+        $untitled = message_from_form($this->form(['body_zh' => '<p>內容</p>', 'title_en' => 'English title only', 'body_en' => '<p>Text</p>']));
+        $this->assertSame(['error_needs_title_zh'], message_errors($untitled, 'publish'));
+        $this->assertSame(['error_needs_title_zh'], message_errors($untitled, 'update'));
+        $this->assertSame([], message_errors($untitled, 'draft'), 'A draft can be saved untitled.');
+        $this->assertSame([], message_errors($untitled, 'unpublish'));
+
+        $both = message_from_form($this->form(['body_zh' => '<p>內容</p>', 'body_en' => '<p>Text</p>']));
+        $this->assertSame(['error_needs_title_zh', 'error_needs_title_en'], message_errors($both, 'publish'));
     }
 
     public function testEmptyEditorDoesNotCountAsText(): void
@@ -140,7 +152,7 @@ final class EditorTest extends TestCase
 
     public function testUntitledMessageUsesItsPacificDateAsSlug(): void
     {
-        $result = apply_editor_action($this->pdo, null, $this->form(['body_zh' => '<p>內容</p>']), 'publish');
+        $result = apply_editor_action($this->pdo, null, $this->form(['body_zh' => '<p>內容</p>']), 'draft');
         $this->assertSame('2026-10-04', $this->row($result['id'])['slug'], '18:00 Pacific on Oct 4 is Oct 5 in UTC, but the slug uses the local date.');
     }
 
@@ -175,25 +187,25 @@ final class EditorTest extends TestCase
     public function testCategoryIsSavedAndCanBeCleared(): void
     {
         $romans = (int) find_category_by_slug($this->pdo, 'romans')['id'];
-        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => (string) $romans]), 'publish')['id'];
+        $id = apply_editor_action($this->pdo, null, $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>', 'category_id' => (string) $romans]), 'publish')['id'];
         $this->assertSame($romans, $this->row($id)['category_id']);
 
-        apply_editor_action($this->pdo, $this->row($id), $this->form(['body_en' => '<p>x</p>', 'category_id' => '']), 'update');
+        apply_editor_action($this->pdo, $this->row($id), $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>', 'category_id' => '']), 'update');
         $this->assertNull($this->row($id)['category_id'], '"(None)" clears it.');
     }
 
     public function testUnknownCategoryIsIgnored(): void
     {
-        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => '999']), 'draft')['id'];
+        $id = apply_editor_action($this->pdo, null, $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>', 'category_id' => '999']), 'draft')['id'];
         $this->assertNull($this->row($id)['category_id']);
-        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => ['1']]), 'draft')['id'];
+        $id = apply_editor_action($this->pdo, null, $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>', 'category_id' => ['1']]), 'draft')['id'];
         $this->assertNull($this->row($id)['category_id']);
     }
 
     public function testSavingWithoutACategoryFieldKeepsTheCategory(): void
     {
         $romans = (int) find_category_by_slug($this->pdo, 'romans')['id'];
-        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => (string) $romans]), 'publish')['id'];
+        $id = apply_editor_action($this->pdo, null, $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>', 'category_id' => (string) $romans]), 'publish')['id'];
         $message = $this->row($id);
         save_message($this->pdo, ['title_en' => 'From the import', 'body_en' => '<p>x</p>', 'title_zh' => '', 'body_zh' => '', 'status' => 'published', 'published_at' => $message['published_at']], $message);
         $this->assertSame($romans, $this->row($id)['category_id']);
@@ -201,8 +213,8 @@ final class EditorTest extends TestCase
 
     public function testUnpublishMakesItADraftAgain(): void
     {
-        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>']), 'publish')['id'];
-        $result = apply_editor_action($this->pdo, $this->row($id), $this->form(['body_en' => '<p>x</p>']), 'unpublish');
+        $id = apply_editor_action($this->pdo, null, $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>']), 'publish')['id'];
+        $result = apply_editor_action($this->pdo, $this->row($id), $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>']), 'unpublish');
         $this->assertSame('notice_unpublished', $result['notice']);
         $this->assertSame('draft', $this->row($id)['status']);
         $this->assertNull(find_published($this->pdo, $this->row($id)['slug']));
@@ -248,11 +260,11 @@ final class EditorTest extends TestCase
 
     public function testSavingWithoutChangesAddsNoVersion(): void
     {
-        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>']), 'publish')['id'];
-        apply_editor_action($this->pdo, $this->row($id), $this->form(['body_en' => '<p>x</p>']), 'update');
+        $id = apply_editor_action($this->pdo, null, $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>']), 'publish')['id'];
+        apply_editor_action($this->pdo, $this->row($id), $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>']), 'update');
         $this->assertCount(1, message_revisions($this->pdo, $id));
 
-        apply_editor_action($this->pdo, $this->row($id), $this->form(['body_en' => '<p>x</p>']), 'unpublish');
+        apply_editor_action($this->pdo, $this->row($id), $this->form(['title_en' => 'Title', 'body_en' => '<p>x</p>']), 'unpublish');
         $this->assertCount(2, message_revisions($this->pdo, $id), 'Unpublishing is a change.');
     }
 

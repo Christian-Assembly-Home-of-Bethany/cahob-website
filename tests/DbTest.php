@@ -23,15 +23,15 @@ final class DbTest extends TestCase
 
     public function testFirstRunCreatesTheTables(): void
     {
-        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages'], $this->tables());
-        $this->assertSame(4, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
+        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], $this->tables());
+        $this->assertSame(5, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
     }
 
     public function testMigratingAgainChangesNothing(): void
     {
         $this->pdo->exec("INSERT INTO messages (slug, title_en) VALUES ('kept', 'Kept')");
         db_migrate($this->pdo);
-        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages'], $this->tables());
+        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], $this->tables());
         $this->assertSame('Kept', $this->pdo->query("SELECT title_en FROM messages WHERE slug = 'kept'")->fetchColumn());
     }
 
@@ -83,19 +83,47 @@ final class DbTest extends TestCase
         $this->pdo->exec("UPDATE messages SET slug = '2026-09-28' WHERE id = $untitled");
         $typed = $save('x', 'Typed by the pastor');
         $this->pdo->exec("UPDATE messages SET slug = '2026-10-02' WHERE id = $typed");
-        $this->pdo->exec('PRAGMA user_version = 3');
+        $this->pdo->exec('DROP TABLE slug_redirects; PRAGMA user_version = 3');
 
         db_migrate($this->pdo);
 
         $row = find_message($this->pdo, $untitled);
         $this->assertSame('Two “Lests” and One “Holding Fast”', $row['title_en']);
         $this->assertSame('兩個「免得」與一個「持守」', $row['title_zh']);
-        $this->assertSame('2026-09-28', $row['slug'], 'The link stays the same.');
         $this->assertCount(2, message_revisions($this->pdo, $untitled), 'A new version, so the untitled one can be restored.');
 
         $row = find_message($this->pdo, $typed);
         $this->assertSame('Typed by the pastor', $row['title_en'], 'A title the pastor typed is kept.');
         $this->assertSame('世代信仰形成的屬靈原則', $row['title_zh'], 'The empty one is filled.');
+    }
+
+    public function testDateSlugsBecomeTitleSlugsAndStillWork(): void
+    {
+        $save = fn(string $titleEn, string $publishedAt): int => save_message($this->pdo, [
+            'title_en' => $titleEn, 'title_zh' => '', 'body_en' => '<p>Text</p>', 'body_zh' => '',
+            'status' => 'published', 'published_at' => $publishedAt,
+        ]);
+        $first = $save('', '2026-07-20T17:00:00Z');
+        $second = $save('', '2026-08-07T18:00:00Z');
+        $chinese = $save('', '2026-08-07T19:00:00Z');
+        $named = $save('Already Named', '2026-08-08T19:00:00Z');
+        $this->pdo->exec("UPDATE messages SET title_en = 'Same Title' WHERE id IN ($first, $second)");
+        $this->pdo->exec("UPDATE messages SET title_zh = '只有中文' WHERE id = $chinese");
+        $this->pdo->exec('DROP TABLE slug_redirects; PRAGMA user_version = 4');
+        $this->assertSame(['2026-07-20', '2026-08-07', '2026-08-07-2', 'already-named'], array_column($this->pdo->query('SELECT slug FROM messages ORDER BY id')->fetchAll(), 'slug'));
+
+        db_migrate($this->pdo);
+
+        $this->assertSame('same-title', find_message($this->pdo, $first)['slug'], 'The older one gets the plain slug.');
+        $this->assertSame('same-title-2', find_message($this->pdo, $second)['slug']);
+        $this->assertSame('2026-08-07-2', find_message($this->pdo, $chinese)['slug'], 'No English title: the date stays.');
+        $this->assertSame('already-named', find_message($this->pdo, $named)['slug']);
+        $this->assertSame($second, find_redirect($this->pdo, '2026-08-07')['id'], 'The old link still finds it.');
+        $this->assertNull(find_redirect($this->pdo, '2026-08-07-2'), 'Still its real slug, not a redirect.');
+
+        // A new untitled message that day can't take the old link.
+        $new = $save('', '2026-08-07T20:00:00Z');
+        $this->assertSame('2026-08-07-3', find_message($this->pdo, $new)['slug']);
     }
 
     public function testCategoriesStartWithTheBloggerLabels(): void

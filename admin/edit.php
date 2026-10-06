@@ -71,8 +71,6 @@ $values = [
 ];
 $categories = all_categories(db());
 $isPublished = $message['status'] === 'published';
-// An empty title is shown as the date, so the title boxes show that date until a title is typed.
-$dateUtc = local_to_utc($values['published_at']);
 $saveButton = at($isPublished ? 'btn_update' : 'btn_save_draft');
 $notice = in_array($_GET['notice'] ?? '', EDITOR_NOTICES, true) ? $_GET['notice'] : null;
 $formAction = '/admin/edit.php' . ($existing !== null ? '?id=' . (int) $existing['id'] : '');
@@ -154,7 +152,7 @@ foreach ($errors as $error) {
           <section class="editor-lang" aria-labelledby="heading-<?= $code ?>">
             <h2 id="heading-<?= $code ?>"><?= at('section_' . $code) ?></h2>
             <label for="title_<?= $code ?>"><?= at('title_label') ?></label>
-            <input type="text" id="title_<?= $code ?>" name="title_<?= $code ?>" value="<?= e($values['title_' . $code]) ?>" placeholder="<?= $dateUtc !== null ? e(format_date($dateUtc, $code)) : '' ?>" data-date-placeholder="<?= $code ?>" maxlength="<?= TITLE_MAX ?>" lang="<?= $contentLang ?>" />
+            <input type="text" id="title_<?= $code ?>" name="title_<?= $code ?>" value="<?= e($values['title_' . $code]) ?>" maxlength="<?= TITLE_MAX ?>" lang="<?= $contentLang ?>" />
             <span class="editor-label" id="label-body_<?= $code ?>"><?= at('body_label') ?></span>
             <div class="message-editor" data-input="body_<?= $code ?>" data-label="label-body_<?= $code ?>" lang="<?= $contentLang ?>"><?= $values['body_' . $code] ?></div>
             <input type="hidden" id="body_<?= $code ?>" name="body_<?= $code ?>" value="<?= e($values['body_' . $code]) ?>" />

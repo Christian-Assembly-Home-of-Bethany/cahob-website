@@ -68,10 +68,17 @@ function message_errors(array $message, string $action): array
     }
     $hasBody = !html_is_blank($message['body_en']) || !html_is_blank($message['body_zh']);
     $hasTitle = $message['title_en'] !== '' || $message['title_zh'] !== '';
-    if (in_array($action, ['publish', 'update'], true) && !$hasBody) {
+    $publishing = in_array($action, ['publish', 'update'], true);
+    if ($publishing && !$hasBody) {
         $errors[] = 'error_needs_body';
     } elseif (!$hasBody && !$hasTitle) {
         $errors[] = 'error_empty';
+    }
+    // Drafts can be saved untitled; a published message needs a title for each language it has.
+    foreach ($publishing ? ['zh', 'en'] : [] as $lang) {
+        if (!html_is_blank($message['body_' . $lang]) && $message['title_' . $lang] === '') {
+            $errors[] = 'error_needs_title_' . $lang;
+        }
     }
     return $errors;
 }

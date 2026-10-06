@@ -91,21 +91,6 @@
   const htmlOf = (quill) => (quill.getLength() <= 1 ? "" : quill.getSemanticHTML().replace(/&nbsp;/g, " "));
   const syncInputs = () => editors.forEach(({ quill, input }) => { input.value = htmlOf(quill); });
 
-  // ---------- The date shown in empty title boxes ----------
-
-  // Matches format_date() in lib/render.php. The date box is already in Pacific time.
-  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const dateInput = document.getElementById("published_at");
-  const showDateInTitles = () => {
-    const match = /^(\d{4})-(\d{2})-(\d{2})T/.exec(dateInput.value);
-    form.querySelectorAll("[data-date-placeholder]").forEach((title) => {
-      if (!match) { title.placeholder = ""; return; }
-      const [, y, m, d] = match.map(Number);
-      title.placeholder = title.dataset.datePlaceholder === "zh" ? `${y}年${m}月${d}日` : `${MONTHS[m - 1]} ${d}, ${y}`;
-    });
-  };
-  dateInput.addEventListener("input", showDateInTitles);
-
   // ---------- A copy of unsaved work in this browser ----------
 
   const storage = {
@@ -140,7 +125,6 @@
     banner.hidden = false;
     document.getElementById("restore-button").addEventListener("click", () => {
       fields.forEach((field) => { if (typeof kept.data[field.name] === "string") field.value = kept.data[field.name]; });
-      showDateInTitles(); // setting .value doesn't fire "input"
       editors.forEach(({ quill, input }) => {
         quill.setContents(quill.clipboard.convert({ html: kept.data[input.name] || "" }), "silent");
       });

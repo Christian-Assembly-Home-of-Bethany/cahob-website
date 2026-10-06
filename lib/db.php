@@ -18,7 +18,7 @@ function db_open(string $path): PDO
 /**
  * Creates the tables on first run and applies any later schema changes. SQLite's
  * user_version records which changes a database already has, so this is safe to call on
- * every request.
+ * every request. A change is SQL, or a function for changes SQL can't make (like slugify()).
  */
 function db_migrate(PDO $pdo): void
 {
@@ -137,6 +137,28 @@ function db_migrate(PDO $pdo): void
               WHERE m.slug IN ('2026-07-19', '2026-07-20', '2026-07-27', '2026-07-31', '2026-08-02', '2026-08-07', '2026-08-07-2', '2026-08-16', '2026-08-24', '2026-08-25', '2026-09-16', '2026-09-24', '2026-09-28', '2026-10-02', '2026-10-05')
                 AND (r.title_en <> m.title_en OR r.title_zh <> m.title_zh);
             SQL,
+        // Links from titles instead of dates: published messages with a date slug and an English
+        // title get a slug from that title. The old date slug keeps working as a redirect.
+        5 => function (PDO $pdo): void {
+            $pdo->exec(<<<'SQL'
+                CREATE TABLE slug_redirects (
+                  old_slug   TEXT PRIMARY KEY,
+                  message_id INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE
+                );
+                SQL);
+            $dated = $pdo->query(
+                "SELECT * FROM messages WHERE title_en <> '' AND slug GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*'
+                 ORDER BY published_at, id"
+            )->fetchAll();
+            foreach ($dated as $message) {
+                $base = slugify($message['title_en']);
+                if ($base === '') {
+                    continue;
+                }
+                $pdo->prepare('INSERT INTO slug_redirects (old_slug, message_id) VALUES (?, ?)')->execute([$message['slug'], $message['id']]);
+                $pdo->prepare('UPDATE messages SET slug = ? WHERE id = ?')->execute([unique_slug($pdo, $base, (int) $message['id']), $message['id']]);
+            }
+        },
     ];
 
     $current = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -145,7 +167,7 @@ function db_migrate(PDO $pdo): void
             continue;
         }
         $pdo->beginTransaction();
-        $pdo->exec($sql);
+        is_callable($sql) ? $sql($pdo) : $pdo->exec($sql);
         $pdo->exec("PRAGMA user_version = $version");
         $pdo->commit();
     }
@@ -178,6 +200,17 @@ function published_messages(PDO $pdo, int $limit, int $offset, ?int $categoryId 
     $query->bindValue(':offset', $offset, PDO::PARAM_INT);
     $query->execute();
     return $query->fetchAll();
+}
+
+/** The published message an old slug (from before it had a title) now points to. */
+function find_redirect(PDO $pdo, string $oldSlug): ?array
+{
+    $query = $pdo->prepare(
+        "SELECT m.* FROM slug_redirects r JOIN messages m ON m.id = r.message_id
+         WHERE r.old_slug = ? AND m.status = 'published' AND m.deleted_at IS NULL"
+    );
+    $query->execute([$oldSlug]);
+    return $query->fetch() ?: null;
 }
 
 function find_published(PDO $pdo, string $slug): ?array
@@ -221,13 +254,19 @@ function slugify(string $title): string
     return trim($slug, '-');
 }
 
-/** $base, or $base-2, $base-3, ... if another message already uses it. */
+/**
+ * $base, or $base-2, $base-3, ... if another message already uses it, either as its slug or as
+ * an old slug that redirects to it (so an old shared link never shows a different message).
+ */
 function unique_slug(PDO $pdo, string $base, ?int $exceptId = null): string
 {
-    $taken = $pdo->prepare('SELECT 1 FROM messages WHERE slug = ? AND id IS NOT ?');
+    $taken = $pdo->prepare(
+        'SELECT 1 FROM messages WHERE slug = :slug AND id IS NOT :id
+         UNION ALL SELECT 1 FROM slug_redirects WHERE old_slug = :slug AND message_id IS NOT :id'
+    );
     for ($n = 1; ; $n++) {
         $slug = $n === 1 ? $base : "$base-$n";
-        $taken->execute([$slug, $exceptId]);
+        $taken->execute(['slug' => $slug, 'id' => $exceptId]);
         if ($taken->fetchColumn() === false) {
             return $slug;
         }
