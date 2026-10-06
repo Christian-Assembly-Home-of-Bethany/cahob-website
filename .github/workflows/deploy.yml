@@ -27,7 +27,7 @@ jobs:
             .git*
             .git*/**
             .github/**
-            README.md
+            **/README.md
             Makefile
             CLAUDE.md
             plans/**
@@ -35,6 +35,5 @@ jobs:
             composer.json
             composer.lock
             phpunit.xml
-            lib/tools/dev_router.php
-            lib/tools/seed_dev.php
-            lib/tools/import_blogger.php
+            lib/tools/**
+            lib/config.example.php
