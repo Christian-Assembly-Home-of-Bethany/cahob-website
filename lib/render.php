@@ -57,7 +57,6 @@ const UI_TEXT = [
         'not_found' => 'Message not found',
         'not_found_text' => 'It may have been moved or removed.',
         'see_all' => 'See all messages',
-        'sign_in' => 'Sign in',
         'categories' => 'Categories',
         'all_categories' => 'All messages',
         'more_in' => 'More in %s',
@@ -101,7 +100,6 @@ const UI_TEXT = [
         'not_found' => '找不到這篇信息',
         'not_found_text' => '它可能已被移動或刪除。',
         'see_all' => '查看所有信息',
-        'sign_in' => '登入',
         'categories' => '分類',
         'all_categories' => '所有信息',
         'more_in' => '更多「%s」',
@@ -118,9 +116,12 @@ function other_lang(string $lang): string
     return $lang === 'zh' ? 'en' : 'zh';
 }
 
-/** Static page links: index.html / index-zh.html, and so on. */
+/** Static page links: / (the English home page) or index-zh.html, faith-and-vision.html, and so on. */
 function static_page(string $name, string $lang): string
 {
+    if ($name === 'index' && $lang !== 'zh') {
+        return '/';
+    }
     return '/' . $name . ($lang === 'zh' ? '-zh' : '') . '.html';
 }
 

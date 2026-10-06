@@ -115,6 +115,8 @@ final class RenderTest extends TestCase
         $this->assertSame('/messages/?category=romans', list_url('en', 1, 'romans'));
         $this->assertSame('/messages-zh/?category=church-history&page=2', list_url('zh', 2, 'church-history'));
         $this->assertSame('/who-we-are-zh.html', static_page('who-we-are', 'zh'));
+        $this->assertSame('/', static_page('index', 'en'), 'The home page without index.html.');
+        $this->assertSame('/index-zh.html', static_page('index', 'zh'));
     }
 
     public function testOldPhpAddressesPointToTheCleanUrls(): void
