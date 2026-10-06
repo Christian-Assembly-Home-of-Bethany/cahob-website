@@ -31,5 +31,9 @@ confirming with the user first.
    of what was checked (e.g. `- [x] Pages render locally in EN and ZH`).
 4. Merging needs one approval and a passing **Backend tests** check. Repo admins can bypass.
 
+Every change is a new commit, so reviewers can see exactly what changed since they last
+looked. Never amend, squash, rebase, or force-push a branch. To bring a branch up to date
+(e.g. a stacked PR after the one below it merges), merge `main` into it.
+
 Backend tests run `composer test` in CI (PHPUnit, in `tests/`). Run them locally with
 `make test` after `composer install`.
