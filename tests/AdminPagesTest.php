@@ -145,7 +145,7 @@ final class AdminPagesTest extends TestCase
         $this->assertStringContainsString('data-saved="1"', $html);
         $this->assertStringContainsString('value="update"', $html);
         $this->assertStringContainsString('value="unpublish"', $html);
-        $this->assertStringContainsString('href="/message.php?slug=who-are-we&amp;lang=zh"', $html);
+        $this->assertStringContainsString('href="/messages-zh/who-are-we"', $html);
     }
 
     public function testUnknownNoticeIsIgnored(): void

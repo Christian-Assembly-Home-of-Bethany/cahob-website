@@ -1,15 +1,17 @@
 <?php
-// One message: message.php?slug=...&lang=en|zh. Shows the requested language first, then the
-// other language below it. If the message wasn't written in the requested language, the
-// other one is shown alone.
+// One message, at /messages/<slug> or /messages-zh/<slug> (those folders' index.php set
+// $lang and include this file). Shows the page's language first, then the other language
+// below it. If the message wasn't written in the page's language, the other one is shown
+// alone. The old /message.php?slug=...&lang=zh addresses redirect to the new ones.
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib/bootstrap.php';
 require_once __DIR__ . '/lib/render.php';
 
-$lang = ($_GET['lang'] ?? '') === 'zh' ? 'zh' : 'en';
+$lang = ($lang ?? $_GET['lang'] ?? '') === 'zh' ? 'zh' : 'en';
 $slug = is_string($_GET['slug'] ?? null) ? $_GET['slug'] : '';
+redirect_legacy_url();
 
 $message = $slug === '' ? null : find_published(db(), $slug);
 if ($message === null) {

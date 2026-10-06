@@ -108,14 +108,43 @@ function static_page(string $name, string $lang): string
 
 function list_url(string $lang, int $page = 1): string
 {
-    $url = $lang === 'zh' ? '/messages-zh.php' : '/messages.php';
+    $url = $lang === 'zh' ? '/messages-zh/' : '/messages/';
     return $page > 1 ? $url . '?page=' . $page : $url;
 }
 
 function message_url(array $message, string $lang): string
 {
-    $url = '/message.php?slug=' . rawurlencode($message['slug']);
-    return $lang === 'zh' ? $url . '&lang=zh' : $url;
+    return list_url($lang) . rawurlencode($message['slug']);
+}
+
+/** The path the browser asked for, e.g. "/messages/some-slug" (rewrites don't change it). */
+function request_path(): string
+{
+    return rawurldecode(explode('?', (string) ($_SERVER['REQUEST_URI'] ?? ''), 2)[0]);
+}
+
+/** Where an old .php address (from before the clean URLs) now lives, or null if $path isn't one. */
+function legacy_url(string $path, array $query): ?string
+{
+    $page = max(1, (int) ($query['page'] ?? 1));
+    $slug = is_string($query['slug'] ?? null) ? $query['slug'] : '';
+    $lang = ($query['lang'] ?? '') === 'zh' ? 'zh' : 'en';
+    return match ($path) {
+        '/messages.php' => list_url('en', $page),
+        '/messages-zh.php' => list_url('zh', $page),
+        '/message.php' => $slug !== '' ? message_url(['slug' => $slug], $lang) : list_url($lang),
+        default => null,
+    };
+}
+
+/** Sends links shared before the clean URLs to their new address. */
+function redirect_legacy_url(): void
+{
+    $url = legacy_url(request_path(), $_GET);
+    if ($url !== null) {
+        header('Location: ' . $url, true, 301);
+        exit;
+    }
 }
 
 function page_count(int $total, int $perPage): int
