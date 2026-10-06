@@ -194,6 +194,12 @@ $insert->execute([
 ]);
 // The published samples' slugs are fixed, and every sample starts its version history.
 $pdo->exec("UPDATE messages SET was_published = 1 WHERE status = 'published'");
+// Spread the samples over the categories so the sidebar has something to show.
+$categoryIds = $pdo->query('SELECT id FROM categories ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);
+$setCategory = $pdo->prepare('UPDATE messages SET category_id = ? WHERE id = ?');
+foreach ($categoryIds ? $pdo->query('SELECT id FROM messages')->fetchAll(PDO::FETCH_COLUMN) : [] as $id) {
+    $setCategory->execute([$categoryIds[$id % count($categoryIds)], $id]);
+}
 foreach ($pdo->query('SELECT id FROM messages')->fetchAll(PDO::FETCH_COLUMN) as $id) {
     add_revision($pdo, (int) $id);
 }

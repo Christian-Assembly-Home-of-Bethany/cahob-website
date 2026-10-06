@@ -112,6 +112,8 @@ final class RenderTest extends TestCase
         $this->assertSame('/messages-zh/x', message_url(['slug' => 'x'], 'zh', 'zh'), 'No version when it matches the page.');
         $this->assertSame('/messages/', list_url('en'));
         $this->assertSame('/messages-zh/?page=3', list_url('zh', 3));
+        $this->assertSame('/messages/?category=romans', list_url('en', 1, 'romans'));
+        $this->assertSame('/messages-zh/?category=church-history&page=2', list_url('zh', 2, 'church-history'));
         $this->assertSame('/who-we-are-zh.html', static_page('who-we-are', 'zh'));
     }
 

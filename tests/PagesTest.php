@@ -243,7 +243,7 @@ final class PagesTest extends TestCase
 
         $html = $this->render('message.php', ['slug' => 'both']);
 
-        $this->assertStringContainsString('<div class="message-actions" role="group" aria-label="Print or save this message" hidden>', $html, 'Hidden until script.js shows it.');
+        $this->assertStringContainsString('<div class="message-actions" role="group" aria-label="Print or save this message" lang="en" hidden>', $html, 'Hidden until script.js shows it.');
         $this->assertStringContainsString('<button type="button" class="btn btn-ghost" data-print>Print</button>', $html);
         $this->assertStringContainsString('data-print data-filename="CAHOB 2026-10-02 Both languages" title="Opens the print window. Choose &quot;Save as PDF&quot; there.">Download PDF</button>', $html);
         $this->assertLessThan(strpos($html, 'lang-toggle'), strpos($html, 'message-actions'), 'The buttons sit before the language switch.');
@@ -258,15 +258,23 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('>下載 PDF</button>', $html);
     }
 
-    public function testButtonsFollowThePageLanguage(): void
+    public function testButtonsFollowTheLanguageBeingRead(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
         $html = $this->render('messages/index.php', ['slug' => 'both', 'version' => 'zh']);
-        $this->assertStringContainsString('aria-label="Print or save this message" hidden>', $html, 'English site, Chinese message: English buttons, like the menu.');
+        $this->assertStringContainsString('aria-label="列印或儲存這篇信息" lang="zh-Hant" hidden>', $html, 'English site, Chinese text: Chinese buttons.');
+        $this->assertStringContainsString('>列印</button>', $html);
+        $this->assertStringContainsString('>下載 PDF</button>', $html);
+        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 雙語信息"', $html);
+    }
+
+    public function testChineseSiteShowingEnglishTextHasEnglishButtons(): void
+    {
+        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
+        $html = $this->render('messages-zh/index.php', ['slug' => 'both', 'version' => 'en']);
+        $this->assertStringContainsString('aria-label="Print or save this message" lang="en" hidden>', $html);
         $this->assertStringContainsString('>Print</button>', $html);
-        $this->assertStringContainsString('>Download PDF</button>', $html);
-        $this->assertStringNotContainsString('列印', $html);
-        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 雙語信息"', $html, 'The PDF is still named after the message being read.');
+        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 Both languages"', $html);
     }
 
     public function testOneLanguageUntitledMessageStillHasTheButtons(): void
@@ -363,6 +371,75 @@ final class PagesTest extends TestCase
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
         $html = $this->render('messages/index.php', ['slug' => 'both', 'lang' => 'zh']);
         $this->assertStringContainsString('<title>Both languages | CAHOB</title>', $html);
+    }
+
+    private function categorize(string $slug, string $category): void
+    {
+        db()->prepare('UPDATE messages SET category_id = (SELECT id FROM categories WHERE slug = ?) WHERE slug = ?')->execute([$category, $slug]);
+    }
+
+    public function testListHasACategorySidebar(): void
+    {
+        $this->add('a', ['title_en' => 'Romans one', 'body_en' => '<p>a</p>']);
+        $this->add('b', ['title_en' => 'Romans two', 'body_en' => '<p>b</p>']);
+        $this->add('c', ['title_en' => 'Uncategorized', 'body_en' => '<p>c</p>']);
+        $this->categorize('a', 'romans');
+        $this->categorize('b', 'romans');
+
+        $html = $this->render('messages.php');
+
+        $this->assertStringContainsString('<nav class="category-nav" aria-label="Categories">', $html);
+        $this->assertStringContainsString('<a href="/messages/" aria-current="page">All messages <span class="category-count">3</span></a>', $html);
+        $this->assertStringContainsString('<a href="/messages/?category=romans">Romans <span class="category-count">2</span></a>', $html);
+        $this->assertStringNotContainsString('Church History', $html, 'Empty categories are left out.');
+    }
+
+    public function testCategoryPageShowsOnlyItsMessages(): void
+    {
+        $this->add('a', ['title_zh' => '羅馬書一', 'body_zh' => '<p>a</p>']);
+        $this->add('c', ['title_zh' => '沒有分類', 'body_zh' => '<p>c</p>']);
+        $this->categorize('a', 'romans');
+
+        $html = $this->render('messages-zh.php', ['category' => 'romans']);
+
+        $this->assertStringContainsString('<title>羅馬書｜信息｜CAHOB</title>', $html);
+        $this->assertStringContainsString('<h1 class="hero-title fade-up">羅馬書</h1>', $html);
+        $this->assertStringContainsString('羅馬書一', $html);
+        $this->assertStringNotContainsString('沒有分類', $html);
+        $this->assertStringContainsString('<a href="/messages-zh/?category=romans" aria-current="page">羅馬書', $html);
+        $this->assertStringContainsString('<a href="/messages-zh/">所有信息 <span class="category-count">2</span></a>', $html);
+        $this->assertStringContainsString('href="/messages/?category=romans" class="lang-switch"', $html, 'The language switch keeps the category.');
+    }
+
+    public function testCategoryPagesKeepTheCategoryWhenPaging(): void
+    {
+        for ($i = 1; $i <= 11; $i++) {
+            $this->add("r$i", ['title_en' => "Romans $i", 'body_en' => '<p>x</p>', 'published_at' => sprintf('2026-08-%02dT18:00:00Z', $i)]);
+            $this->categorize("r$i", 'romans');
+        }
+        $html = $this->render('messages.php', ['category' => 'romans']);
+        $this->assertStringContainsString('href="/messages/?category=romans&amp;page=2" rel="next"', $html);
+    }
+
+    public function testUnknownCategoryIsNotFound(): void
+    {
+        $this->render('messages.php', ['category' => 'nope']);
+        $this->assertSame(404, http_response_code());
+    }
+
+    public function testNoSidebarWithoutCategorizedMessages(): void
+    {
+        $this->add('a', ['title_en' => 'Plain', 'body_en' => '<p>a</p>']);
+        $this->assertStringNotContainsString('category-nav', $this->render('messages.php'));
+    }
+
+    public function testMessagePageShowsItsCategory(): void
+    {
+        $this->add('a', ['title_en' => 'Romans one', 'body_en' => '<p>a</p>']);
+        $this->categorize('a', 'romans');
+        $html = $this->render('message.php', ['slug' => 'a']);
+        $this->assertStringContainsString('<p class="hero-eyebrow fade-up">Romans</p>', $html);
+        $this->assertStringContainsString('<a href="/messages/?category=romans" class="explore-link">More in Romans</a>', $html);
     }
 
     public function testTitlesAreEscaped(): void
