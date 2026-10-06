@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 15;
+const STYLES_VERSION = 16;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -516,6 +516,7 @@ const ADMIN_TEXT = [
         'sync_removed' => '已從 Blogger 刪除，網站上仍保留（%d）',
         'sync_unchanged' => '%d 篇 Blogger 文章沒有變動。',
         'sync_apply' => '套用',
+        'sync_website' => '網站',
         'sync_done' => '同步完成：新增 %d 篇信息，更新 %d 篇。',
         // Categories
         'category' => '分類',
@@ -676,6 +677,7 @@ const ADMIN_TEXT = [
         'sync_removed' => 'Deleted on Blogger, still on the website (%d)',
         'sync_unchanged' => '%d Blogger posts unchanged.',
         'sync_apply' => 'Apply',
+        'sync_website' => 'Website',
         'sync_done' => 'Synced: %d new messages, %d updated.',
         // Categories
         'category' => 'Category',

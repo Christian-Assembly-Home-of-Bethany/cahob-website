@@ -969,3 +969,18 @@ html[lang="zh-Hant"] .ql-snow .ql-tooltip.ql-editing a.ql-action::after {
 .sync-apply {
   margin: 24px 0;
 }
+
+/* Where an updated post's text changed: the website's version, then Blogger's */
+.sync-change {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 12px;
+  margin: 4px 0 6px;
+  font-size: 0.88rem;
+  color: var(--color-text-light);
+}
+
+.sync-change dt {
+  font-weight: 600;
+}

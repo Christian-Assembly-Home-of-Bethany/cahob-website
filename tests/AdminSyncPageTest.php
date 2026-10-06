@@ -106,6 +106,22 @@ final class AdminSyncPageTest extends TestCase
         $this->assertStringContainsString('無法讀取 Blogger', $html);
     }
 
+    public function testUpdatesShowWhatChanged(): void
+    {
+        sync_apply(db(), sync_plan(db(), blogger_posts(blogger_feed_source())));
+        $this->writeFeed([
+            ['en1', '2026-10-07T11:00:00-07:00', '<p>Abiding in Christ</p><p>Revised text.</p>', 'Romans'],
+            ['zh1', '2026-10-07T11:05:00-07:00', '<p>住在基督裡</p><p>內容。</p>', '羅馬書'],
+        ]);
+        // Blogger marks the edit with a newer "updated" time.
+        file_put_contents($this->dir . '/feed.xml', preg_replace('#(post-en1</id><published>[^<]+</published><updated>)[^<]+#', '${1}2026-10-08T09:00:00-07:00', file_get_contents($this->dir . '/feed.xml')));
+
+        $html = $this->render();
+        $this->assertStringContainsString('在 Blogger 上修改過，將更新內容（1）', $html);
+        $this->assertStringContainsString('<dt>網站</dt><dd>Abiding in Christ [Text].</dd>', $html);
+        $this->assertStringContainsString('<dt>Blogger</dt><dd>Abiding in Christ [Revised text].</dd>', $html);
+    }
+
     public function testDoneNoticeAfterApplying(): void
     {
         $html = $this->render(['new' => '1', 'updated' => '2']);

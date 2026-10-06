@@ -29,13 +29,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $plan !== null) {
     }
 }
 
-/** One row: a message's label and date, its language, and links to edit it and to the Blogger post. */
-$row = function (array $message, string $code, ?string $url = null): void {
+/**
+ * One row: a message's label and date, its language, and links to edit it and to the Blogger
+ * post. $change (for an update) shows where the website's text and Blogger's differ.
+ */
+$row = function (array $message, string $code, ?string $url = null, ?array $change = null): void {
     $label = dashboard_label($message);
     ?>
             <li>
               <a href="<?= e(admin_url('edit', ['id' => (int) $message['id']])) ?>" lang="<?= t($label['lang'], 'html_lang') ?>"><?= e($label['text']) ?></a>
               <span class="sync-meta"><?= format_date($message['published_at'], admin_lang()) ?> · <?= at('section_' . $code) ?><?php if ($url !== null && $url !== ''): ?> · <a href="<?= e($url) ?>" target="_blank" rel="noopener">Blogger</a><?php endif; ?></span>
+<?php if ($change !== null): ?>
+              <dl class="sync-change" lang="<?= t($code, 'html_lang') ?>">
+                <dt><?= at('sync_website') ?></dt><dd><?= e($change['old']) ?></dd>
+                <dt>Blogger</dt><dd><?= e($change['new']) ?></dd>
+              </dl>
+<?php endif; ?>
             </li>
 <?php
 };
@@ -91,7 +100,8 @@ if ($error !== null) {
 <?php endif; ?>
         <ul class="sync-list">
 <?php foreach ($plan[$key] as $item) {
-    $row($item['message'], $item['lang'], $item['post']['url']);
+    $change = $key === 'update' ? text_difference($item['message']['body_' . $item['lang']], $item['post']['clean']) : null;
+    $row($item['message'], $item['lang'], $item['post']['url'], $change);
 } ?>
         </ul>
       </section>
