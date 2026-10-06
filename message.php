@@ -36,6 +36,16 @@ page_hero(
     'hero--message',
 );
 ?>
+<?php if (has_both_languages($message)): ?>
+
+    <div class="container message-switch">
+      <nav class="lang-toggle" aria-label="<?= t($lang, 'version_label') ?>">
+<?php foreach (['zh', 'en'] as $code): ?>
+        <a href="<?= e(message_url($message, $code)) ?>" class="btn btn-ghost" lang="<?= t($code, 'html_lang') ?>"<?= $code === $lang ? ' aria-current="page"' : '' ?>><?= t($code, 'version_name') ?></a>
+<?php endforeach; ?>
+      </nav>
+    </div>
+<?php endif; ?>
 
     <section class="section" aria-label="<?= e($heading) ?>">
       <div class="container">

@@ -192,8 +192,10 @@ renamed, and published again, so links already shared on LINE or WeChat keep wor
   titles. If a post has no section in that language, the list shows the other language with a
   small **中文** / **English** tag.
 - `message.php` shows **one language per page**: `lang=en` or `lang=zh`. When both languages
-  are written, a **中文版 →** / **English version →** link at the bottom goes to the other
-  language's page, and the top bar's language switch does the same.
+  are written, a **中文版 | English version** switch at the top right, just under the header
+  image, moves between the two pages, with the language being read filled in. A
+  **中文版 →** / **English version →** link at the bottom and the top bar's language switch
+  go to the other language's page too.
 - If the chosen language wasn't written, the page shows the other language alone, with a note
   ("This message is available in Chinese only"), so no post ever looks blank.
 

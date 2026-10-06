@@ -155,6 +155,9 @@ final class PagesTest extends TestCase
         $this->assertStringNotContainsString('雙語信息', $html);
         $this->assertStringContainsString('<a href="/messages-zh/both" class="explore-link" lang="zh-Hant">中文版 <span aria-hidden="true">&rarr;</span></a>', $html);
         $this->assertStringContainsString('href="/messages-zh/both" class="lang-switch"', $html, 'The top bar also switches the page to Chinese.');
+        $this->assertStringContainsString('<nav class="lang-toggle" aria-label="Language">', $html);
+        $this->assertStringContainsString('<a href="/messages-zh/both" class="btn btn-ghost" lang="zh-Hant">中文版</a>', $html);
+        $this->assertStringContainsString('<a href="/messages/both" class="btn btn-ghost" lang="en" aria-current="page">English version</a>', $html);
     }
 
     public function testChineseMessagePageShowsOnlyChinese(): void
@@ -165,6 +168,9 @@ final class PagesTest extends TestCase
 
         $this->assertStringContainsString('<p>中文內容</p>', $html);
         $this->assertStringNotContainsString('English body', $html);
+        $this->assertStringContainsString('<nav class="lang-toggle" aria-label="語言">', $html);
+        $this->assertStringContainsString('lang="zh-Hant" aria-current="page">中文版</a>', $html);
+        $this->assertStringContainsString('<a href="/messages/both" class="btn btn-ghost" lang="en">English version</a>', $html);
         $this->assertStringContainsString('<a href="/messages/both" class="explore-link" lang="en">English version <span aria-hidden="true">&rarr;</span></a>', $html);
         $this->assertStringContainsString('<h1 class="hero-title fade-up">2026年10月2日</h1>', $html, 'No Chinese title, so the date is the heading.');
     }
@@ -179,6 +185,7 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('<article class="content-narrow message-body" lang="zh-Hant">', $html);
         $this->assertStringContainsString('<p>中文內容</p>', $html);
         $this->assertStringNotContainsString('class="explore-link" lang="zh-Hant"', $html, 'No link to a Chinese version that is the same page.');
+        $this->assertStringNotContainsString('lang-toggle', $html, 'No language switch when there is only one language.');
     }
 
     public function testDraftMessageIsNotFound(): void

@@ -1126,19 +1126,48 @@ html[lang="zh-Hant"] .message-meta {
   font-size: clamp(1.6rem, 3.5vw, 2.1rem);
 }
 
-/* Sign-in button for the pastor: top right, just under the header image, lined up with
-   the right edge of the message list */
-.message-signin {
+/* Top right, just under the header image, lined up with the right edge of the text: the
+   pastor's sign-in button on the list, and the 中文版 / English version switch on a message */
+.message-signin,
+.message-switch {
   max-width: 760px;
   padding-top: 20px;
   text-align: right;
 }
 
-.message-signin .btn {
+.message-signin .btn,
+.message-switch .btn {
   padding: 9px 22px;
   font-size: 0.8rem;
 }
 
-.message-signin + .section {
+.message-signin + .section,
+.message-switch + .section {
   padding-top: 40px;
+}
+
+/* The two halves share a border; the language being read is filled in */
+.lang-toggle {
+  display: inline-flex;
+}
+
+.lang-toggle .btn:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.lang-toggle .btn:last-child {
+  margin-left: -2px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.lang-toggle .btn:hover {
+  transform: none;
+}
+
+.lang-toggle .btn[aria-current="page"] {
+  position: relative;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+  cursor: default;
 }
