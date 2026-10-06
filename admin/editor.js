@@ -140,6 +140,7 @@
     banner.hidden = false;
     document.getElementById("restore-button").addEventListener("click", () => {
       fields.forEach((field) => { if (typeof kept.data[field.name] === "string") field.value = kept.data[field.name]; });
+      showDateInTitles(); // setting .value doesn't fire "input"
       editors.forEach(({ quill, input }) => {
         quill.setContents(quill.clipboard.convert({ html: kept.data[input.name] || "" }), "silent");
       });
