@@ -241,7 +241,7 @@ final class PagesTest extends TestCase
 
         $html = $this->render('message.php', ['slug' => 'both']);
 
-        $this->assertStringContainsString('<div class="message-actions" role="group" aria-label="Print or save this message" hidden>', $html, 'Hidden until script.js shows it.');
+        $this->assertStringContainsString('<div class="message-actions" role="group" aria-label="Print or save this message" lang="en" hidden>', $html, 'Hidden until script.js shows it.');
         $this->assertStringContainsString('<button type="button" class="btn btn-ghost" data-print>Print</button>', $html);
         $this->assertStringContainsString('data-print data-filename="CAHOB 2026-10-02 Both languages" title="Opens the print window. Choose &quot;Save as PDF&quot; there.">Download PDF</button>', $html);
         $this->assertLessThan(strpos($html, 'lang-toggle'), strpos($html, 'message-actions'), 'The buttons sit before the language switch.');
@@ -256,15 +256,23 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('>下載 PDF</button>', $html);
     }
 
-    public function testButtonsFollowThePageLanguage(): void
+    public function testButtonsFollowTheLanguageBeingRead(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
         $html = $this->render('messages/index.php', ['slug' => 'both', 'version' => 'zh']);
-        $this->assertStringContainsString('aria-label="Print or save this message" hidden>', $html, 'English site, Chinese message: English buttons, like the menu.');
+        $this->assertStringContainsString('aria-label="列印或儲存這篇信息" lang="zh-Hant" hidden>', $html, 'English site, Chinese text: Chinese buttons.');
+        $this->assertStringContainsString('>列印</button>', $html);
+        $this->assertStringContainsString('>下載 PDF</button>', $html);
+        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 雙語信息"', $html);
+    }
+
+    public function testChineseSiteShowingEnglishTextHasEnglishButtons(): void
+    {
+        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
+        $html = $this->render('messages-zh/index.php', ['slug' => 'both', 'version' => 'en']);
+        $this->assertStringContainsString('aria-label="Print or save this message" lang="en" hidden>', $html);
         $this->assertStringContainsString('>Print</button>', $html);
-        $this->assertStringContainsString('>Download PDF</button>', $html);
-        $this->assertStringNotContainsString('列印', $html);
-        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 雙語信息"', $html, 'The PDF is still named after the message being read.');
+        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 Both languages"', $html);
     }
 
     public function testOneLanguageUntitledMessageStillHasTheButtons(): void
