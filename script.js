@@ -95,3 +95,8 @@ if (messageActions) {
     window.print();
   });
 }
+
+// The home page answers at both / and /index.html; show the shorter address.
+if (window.location.pathname.endsWith("/index.html")) {
+  history.replaceState(null, "", window.location.pathname.slice(0, -"index.html".length) + window.location.search + window.location.hash);
+}

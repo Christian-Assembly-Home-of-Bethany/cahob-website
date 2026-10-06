@@ -95,7 +95,7 @@ function fallback_page(string $titleEn, string $titleZh, string $detail = ''): s
             <main>
               <h1>{$titleEn}</h1>
               <p lang="zh-Hant">{$titleZh}</p>
-              <a href="/index.html">Back to the home page</a> &middot; <a href="/index-zh.html" lang="zh-Hant">返回首頁</a>
+              <a href="/">Back to the home page</a> &middot; <a href="/index-zh.html" lang="zh-Hant">返回首頁</a>
               {$detail}
             </main>
           </body>

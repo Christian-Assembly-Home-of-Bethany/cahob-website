@@ -360,6 +360,20 @@ a {
   flex-wrap: wrap;
 }
 
+/* The home page's four buttons: one row when there's room, otherwise two rows of two (never
+   three and one left alone), and one per row on a phone (see the 720px rule) */
+.hero-content:has(.hero-buttons) {
+  max-width: 900px;
+}
+
+@media (max-width: 920px) {
+  .hero-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    justify-content: center;
+  }
+}
+
 .hero-content > :nth-child(1) { animation-delay: 0.2s; }
 .hero-content > :nth-child(2) { animation-delay: 0.4s; }
 .hero-content > :nth-child(3) { animation-delay: 0.6s; }
@@ -869,6 +883,10 @@ a {
     min-height: 92vh;
   }
 
+  .hero-buttons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .hero-buttons .btn {
     width: 100%;
   }
@@ -1235,23 +1253,19 @@ html[lang="zh-Hant"] .message-meta {
   font-size: clamp(1.6rem, 3.5vw, 2.1rem);
 }
 
-/* Top right, just under the header image, lined up with the right edge of the text: the
-   pastor's sign-in button on the list, and Print, Download PDF, and the 中文版 / English
-   version switch on a message */
-.message-signin,
+/* Top right on a message, just under the header image, lined up with the right edge of the
+   text: Print, Download PDF, and the 中文版 / English version switch */
 .message-switch {
   max-width: 760px;
   padding-top: 20px;
   text-align: right;
 }
 
-.message-signin .btn,
 .message-switch .btn {
   padding: 9px 22px;
   font-size: 0.8rem;
 }
 
-.message-signin + .section,
 .message-switch + .section {
   padding-top: 40px;
 }

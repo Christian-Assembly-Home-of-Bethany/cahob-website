@@ -75,8 +75,7 @@ final class PagesTest extends TestCase
         $this->assertStringNotContainsString('Secret draft', $html);
         $this->assertStringContainsString('A Voice in the Wilderness', $html);
         $this->assertStringContainsString('href="/messages/" class="active"', $html);
-        $this->assertStringContainsString('<a href="/admin/" class="btn btn-ghost" rel="nofollow">Sign in</a>', $html);
-        $this->assertLessThan(strpos($html, 'class="message-list"'), strpos($html, '>Sign in</a>'), 'The sign-in button is above the list, under the header image.');
+        $this->assertStringNotContainsString('href="/admin/"', $html, 'No sign-in button: the pastor goes to /admin/ directly.');
     }
 
     public function testListPagesTenAtATime(): void
@@ -115,7 +114,6 @@ final class PagesTest extends TestCase
     {
         $html = $this->render('messages-zh.php');
         $this->assertStringContainsString('目前還沒有信息', $html);
-        $this->assertStringContainsString('rel="nofollow">登入</a>', $html, 'The sign-in button is there even with no messages.');
     }
 
     public function testChineseListUsesChineseTitlesAndFallsBackToEnglish(): void

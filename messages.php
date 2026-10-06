@@ -39,10 +39,6 @@ page_header($lang, $title, t($lang, 'list_description'), list_url(other_lang($la
 page_hero(t($lang, 'eyebrow'), $category !== null ? category_name($category, $lang) : t($lang, 'messages'), t($lang, 'tagline'));
 ?>
 
-    <div class="container message-signin">
-      <a href="/admin/" class="btn btn-ghost" rel="nofollow"><?= t($lang, 'sign_in') ?></a>
-    </div>
-
     <section class="section" aria-label="<?= t($lang, 'messages') ?>">
       <div class="container<?= $categories ? ' messages-layout' : '' ?>">
 <?php if ($categories): ?>
