@@ -79,7 +79,7 @@ The security features it needs are well understood (see "Security" below).
 /                         (web root, deployed from repo)
 ├── messages.php          public list, English chrome (messages-zh.php reuses it for Chinese)
 ├── messages-zh.php       public list, Chinese chrome
-├── message.php           single message (?slug=...&lang=en|zh), one language
+├── message.php           single message (/messages/<slug>, /messages-zh/<slug>), one language
 ├── admin/                .htaccess forces HTTPS; pages are never cached, framed, or indexed
 │   ├── index.php         dashboard: all messages, plus the latest security log entries
 │   ├── login.php / logout.php / language.php (中文 ⇄ English for the admin pages)
@@ -191,11 +191,14 @@ renamed, and published again, so links already shared on LINE or WeChat keep wor
 - `messages.php` lists posts using the English titles. `messages-zh.php` uses the Chinese
   titles. If a post has no section in that language, the list shows the other language with a
   small **中文** / **English** tag.
-- `message.php` shows **one language per page**: `lang=en` or `lang=zh`. When both languages
-  are written, a **中文版 | English version** switch at the top right, just under the header
-  image, moves between the two pages, with the language being read filled in. A
-  **中文版 →** / **English version →** link at the bottom and the top bar's language switch
-  go to the other language's page too.
+- `message.php` shows **one language of the message at a time**. The address sets the language
+  of the page around it (menu, header, footer, dates): `/messages/<slug>` is English and
+  `/messages-zh/<slug>` is Chinese. `?version=en|zh` is the language of the message text, and
+  defaults to the page's language. When both languages are written, a
+  **中文版 | English version** switch at the top right, just under the header image, changes
+  only the message text, with the language being read filled in. The **中文版 →** /
+  **English version →** link at the bottom does the same. The top bar's 中文 / English button
+  switches the whole page, as on the other pages.
 - If the chosen language wasn't written, the page shows the other language alone, with a note
   ("This message is available in Chinese only"), so no post ever looks blank.
 

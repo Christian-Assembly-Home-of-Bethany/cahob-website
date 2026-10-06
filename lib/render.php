@@ -44,11 +44,11 @@ const UI_TEXT = [
         'pages_label' => 'Message pages',
         'empty' => 'No messages yet. Please check back soon.',
         'all' => 'All messages',
-        'other_version' => '中文版',
         'other_version_lang' => 'zh-Hant',
         'version_name' => 'English version',
         'version_label' => 'Language',
         'only_other' => 'This message is available in Chinese only.',
+        'only_this' => 'This message is available in English only.',
         'in_other' => '中文',
         'not_found' => 'Message not found',
         'not_found_text' => 'It may have been moved or removed.',
@@ -81,11 +81,11 @@ const UI_TEXT = [
         'pages_label' => '信息分頁',
         'empty' => '目前還沒有信息，請稍後再來。',
         'all' => '所有信息',
-        'other_version' => 'English version',
         'other_version_lang' => 'en',
         'version_name' => '中文版',
         'version_label' => '語言',
         'only_other' => '此信息只有英文版。',
+        'only_this' => '此信息只有中文版。',
         'in_other' => 'English',
         'not_found' => '找不到這篇信息',
         'not_found_text' => '它可能已被移動或刪除。',
@@ -116,9 +116,14 @@ function list_url(string $lang, int $page = 1): string
     return $page > 1 ? $url . '?page=' . $page : $url;
 }
 
-function message_url(array $message, string $lang): string
+/**
+ * $lang is the language of the page around the message. $version is the language of the
+ * message text, when the 中文版 / English version switch picked one other than $lang.
+ */
+function message_url(array $message, string $lang, ?string $version = null): string
 {
-    return list_url($lang) . rawurlencode($message['slug']);
+    $url = list_url($lang) . rawurlencode($message['slug']);
+    return $version !== null && $version !== $lang ? $url . '?version=' . $version : $url;
 }
 
 /** The path the browser asked for, e.g. "/messages/some-slug" (rewrites don't change it). */
@@ -282,7 +287,8 @@ function page_header(string $lang, string $title, string $description, string $s
 <?php
 }
 
-function page_hero(string $eyebrow, string $title, string $tagline, string $modifier = ''): void
+/** $titleLang is set when the title is in a different language from the page, e.g. a Chinese title on an English page. */
+function page_hero(string $eyebrow, string $title, string $tagline, string $modifier = '', string $titleLang = ''): void
 {
     ?>
 
@@ -290,7 +296,7 @@ function page_hero(string $eyebrow, string $title, string $tagline, string $modi
       <div class="hero-overlay"></div>
       <div class="hero-content">
         <p class="hero-eyebrow fade-up"><?= e($eyebrow) ?></p>
-        <h1 class="hero-title fade-up"><?= e($title) ?></h1>
+        <h1 class="hero-title fade-up"<?= $titleLang !== '' ? ' lang="' . $titleLang . '"' : '' ?>><?= e($title) ?></h1>
 <?php if ($tagline !== ''): ?>
         <p class="hero-tagline fade-up"><?= e($tagline) ?></p>
 <?php endif; ?>
