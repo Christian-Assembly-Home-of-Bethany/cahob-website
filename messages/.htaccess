@@ -1,0 +1,3 @@
+# /messages/<slug> shows one message; the slug's characters are what slugify() makes.
+RewriteEngine On
+RewriteRule ^([a-z0-9-]+)/?$ index.php?slug=$1 [L]

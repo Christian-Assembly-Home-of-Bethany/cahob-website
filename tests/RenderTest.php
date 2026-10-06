@@ -105,11 +105,24 @@ final class RenderTest extends TestCase
 
     public function testUrls(): void
     {
-        $this->assertSame('/message.php?slug=a%20b%26c', message_url(['slug' => 'a b&c'], 'en'));
-        $this->assertSame('/message.php?slug=x&lang=zh', message_url(['slug' => 'x'], 'zh'));
-        $this->assertSame('/messages.php', list_url('en'));
-        $this->assertSame('/messages-zh.php?page=3', list_url('zh', 3));
+        $this->assertSame('/messages/a%20b%26c', message_url(['slug' => 'a b&c'], 'en'));
+        $this->assertSame('/messages-zh/x', message_url(['slug' => 'x'], 'zh'));
+        $this->assertSame('/messages/', list_url('en'));
+        $this->assertSame('/messages-zh/?page=3', list_url('zh', 3));
         $this->assertSame('/who-we-are-zh.html', static_page('who-we-are', 'zh'));
+    }
+
+    public function testOldPhpAddressesPointToTheCleanUrls(): void
+    {
+        $this->assertSame('/messages/', legacy_url('/messages.php', []));
+        $this->assertSame('/messages/?page=2', legacy_url('/messages.php', ['page' => '2']));
+        $this->assertSame('/messages-zh/', legacy_url('/messages-zh.php', []));
+        $this->assertSame('/messages/2026-10-05', legacy_url('/message.php', ['slug' => '2026-10-05']));
+        $this->assertSame('/messages-zh/2026-10-05', legacy_url('/message.php', ['slug' => '2026-10-05', 'lang' => 'zh']));
+        $this->assertSame('/messages-zh/', legacy_url('/message.php', ['lang' => 'zh']), 'No slug: the list.');
+        $this->assertSame('/messages/', legacy_url('/message.php', ['slug' => ['x']]));
+        $this->assertNull(legacy_url('/messages/', []), 'The new addresses are left alone.');
+        $this->assertNull(legacy_url('/messages/2026-10-05', ['slug' => '2026-10-05']));
     }
 
     public function testPageCount(): void

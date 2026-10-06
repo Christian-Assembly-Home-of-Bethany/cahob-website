@@ -74,7 +74,7 @@ final class PagesTest extends TestCase
         $this->assertLessThan(strpos($html, 'Older message'), strpos($html, 'Newer message'));
         $this->assertStringNotContainsString('Secret draft', $html);
         $this->assertStringContainsString('A Voice in the Wilderness', $html);
-        $this->assertStringContainsString('href="/messages.php" class="active"', $html);
+        $this->assertStringContainsString('href="/messages/" class="active"', $html);
         $this->assertStringContainsString('<a href="/admin/" class="btn btn-ghost" rel="nofollow">Sign in</a>', $html);
         $this->assertLessThan(strpos($html, 'class="message-list"'), strpos($html, '>Sign in</a>'), 'The sign-in button is above the list, under the header image.');
     }
@@ -89,7 +89,7 @@ final class PagesTest extends TestCase
 
         $this->assertSame(2, substr_count($page2, 'class="message-item'));
         $this->assertStringContainsString('Page 2 of 2', $page2);
-        $this->assertStringContainsString('href="/messages.php" rel="prev"', $page2);
+        $this->assertStringContainsString('href="/messages/" rel="prev"', $page2);
         $this->assertStringNotContainsString('rel="next"', $page2);
     }
 
@@ -100,7 +100,7 @@ final class PagesTest extends TestCase
         }
         $page1 = $this->render('messages.php');
         $this->assertSame(10, substr_count($page1, 'class="message-item'));
-        $this->assertStringContainsString('href="/messages.php?page=2" rel="next"', $page1);
+        $this->assertStringContainsString('href="/messages/?page=2" rel="next"', $page1);
     }
 
     public function testPagePastTheEndIsNotFound(): void
@@ -130,14 +130,14 @@ final class PagesTest extends TestCase
         $this->assertStringNotContainsString('Both languages', $html);
         $this->assertStringContainsString('<h2 class="message-title" lang="en">', $html);
         $this->assertStringContainsString('English only', $html);
-        $this->assertStringContainsString('href="/message.php?slug=both&amp;lang=zh"', $html);
+        $this->assertStringContainsString('href="/messages-zh/both"', $html);
     }
 
     public function testUntitledMessageIsListedByItsDate(): void
     {
         $this->add('2026-10-02', ['body_en' => '<p><strong>Abiding in the Vine</strong></p><p>Opening words.</p>']);
         $html = $this->render('messages.php');
-        $this->assertMatchesRegularExpression('#<a href="/message.php\?slug=2026-10-02">October 2, 2026</a>#', $html);
+        $this->assertMatchesRegularExpression('#<a href="/messages/2026-10-02">October 2, 2026</a>#', $html);
         $this->assertStringContainsString('Abiding in the Vine Opening words.', $html);
     }
 
@@ -154,7 +154,7 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('<div class="content-narrow message-second" id="zh" lang="zh-Hant">', $html);
         $this->assertStringContainsString('<h2>雙語信息</h2>', $html);
         $this->assertStringContainsString('<a href="#zh" lang="zh-Hant">中文版 <span aria-hidden="true">&darr;</span></a>', $html);
-        $this->assertStringContainsString('href="/message.php?slug=both&amp;lang=zh" class="lang-switch"', $html, 'The top bar still switches the page to Chinese.');
+        $this->assertStringContainsString('href="/messages-zh/both" class="lang-switch"', $html, 'The top bar still switches the page to Chinese.');
     }
 
     public function testChineseMessagePageShowsChineseFirst(): void
@@ -217,6 +217,33 @@ final class PagesTest extends TestCase
     {
         $this->render('message.php', ['slug' => ['x']]);
         $this->assertSame(404, http_response_code());
+    }
+
+    public function testEnglishFolderShowsTheList(): void
+    {
+        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'body_zh' => '<p>中文內容</p>']);
+        $this->assertStringContainsString('href="/messages/both"', $this->render('messages/index.php'));
+    }
+
+    public function testChineseFolderShowsTheList(): void
+    {
+        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'body_zh' => '<p>中文內容</p>']);
+        $this->assertStringContainsString('href="/messages-zh/both"', $this->render('messages-zh/index.php'));
+    }
+
+    public function testChineseFolderShowsAMessageInChinese(): void
+    {
+        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
+        $html = $this->render('messages-zh/index.php', ['slug' => 'both']);
+        $this->assertStringContainsString('<title>雙語信息｜CAHOB</title>', $html);
+        $this->assertStringContainsString('href="/messages/both" class="lang-switch"', $html);
+    }
+
+    public function testCleanUrlFolderIgnoresALangParameter(): void
+    {
+        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
+        $html = $this->render('messages/index.php', ['slug' => 'both', 'lang' => 'zh']);
+        $this->assertStringContainsString('<title>Both languages | CAHOB</title>', $html);
     }
 
     public function testTitlesAreEscaped(): void

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 /** The local router has to block what lib/.htaccess blocks on the live server. */
@@ -44,7 +46,37 @@ final class DevRouterTest extends TestCase
             ['/images/favicon.svg'],
             ['/content/who-we-are.txt'],
             ['/library.html'],
+            ['/messages/'],
+            ['/messages-zh/?page=2'],
+            ['/messages/index.php'],
+            ['/messages/Not_A_Slug'],
         ];
+    }
+
+    public static function messageLinks(): array
+    {
+        return [['/messages/2026-10-05', '2026-10-05'], ['/messages-zh/faith-across-generations/', 'faith-across-generations']];
+    }
+
+    #[DataProvider('messageLinks')]
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testMapsMessageLinksLikeTheHtaccessFiles(string $uri, string $slug): void
+    {
+        $dir = sys_get_temp_dir() . '/cahob-router-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        file_put_contents($dir . '/config.php', "<?php return ['db_path' => __DIR__ . '/messages.sqlite'];");
+        putenv('CAHOB_CONFIG=' . $dir . '/config.php');
+
+        $_SERVER['REQUEST_URI'] = $uri;
+        ob_start();
+        $handled = require __DIR__ . '/../lib/tools/dev_router.php';
+        $html = ob_get_clean();
+
+        $this->assertTrue($handled);
+        $this->assertSame($slug, $_GET['slug']);
+        $this->assertSame(404, http_response_code(), 'The page ran and found no such message.');
+        $this->assertStringContainsString(str_contains($uri, '-zh') ? '找不到這篇信息' : 'Message not found', $html);
     }
 
     #[DataProvider('blocked')]

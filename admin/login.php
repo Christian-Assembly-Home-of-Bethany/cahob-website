@@ -77,7 +77,7 @@ admin_header(at('login_title'));
           </div>
           <button type="submit" class="btn btn-primary"><?= at('log_in') ?></button>
         </form>
-        <a href="<?= admin_lang() === 'zh' ? '/messages-zh.php' : '/messages.php' ?>" class="admin-back"><span aria-hidden="true">&larr;</span> <?= at('back_to_messages') ?></a>
+        <a href="<?= list_url(admin_lang()) ?>" class="admin-back"><span aria-hidden="true">&larr;</span> <?= at('back_to_messages') ?></a>
       </section>
 <?php
 admin_footer();

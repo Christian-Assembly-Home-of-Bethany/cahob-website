@@ -1,6 +1,7 @@
 <?php
-// The message list, newest first, 10 per page. This is the English page; messages-zh.php
-// sets $lang and reuses this file for the Chinese page.
+// The message list, newest first, 10 per page. Visitors reach it at /messages/ and
+// /messages-zh/ (those folders' index.php set $lang and include this file). The old
+// /messages.php and /messages-zh.php addresses redirect there.
 
 declare(strict_types=1);
 
@@ -11,6 +12,7 @@ const PER_PAGE = 10;
 
 $lang = ($lang ?? 'en') === 'zh' ? 'zh' : 'en';
 $page = max(1, (int) ($_GET['page'] ?? 1));
+redirect_legacy_url();
 
 $total = count_published(db());
 $pages = page_count($total, PER_PAGE);
