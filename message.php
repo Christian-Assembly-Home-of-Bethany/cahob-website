@@ -47,10 +47,10 @@ page_hero(
 ?>
 
     <div class="container message-switch">
-      <?php /* In the language of the message being read, which the 中文版 / English switch can change */ ?>
-      <div class="message-actions" role="group" aria-label="<?= t($section['lang'], 'actions_label') ?>" lang="<?= $contentLang ?>" hidden>
-        <button type="button" class="btn btn-ghost" data-print><?= t($section['lang'], 'print') ?></button>
-        <button type="button" class="btn btn-ghost" data-print data-filename="<?= e($pdfName) ?>" title="<?= e(t($section['lang'], 'download_hint')) ?>"><?= t($section['lang'], 'download_pdf') ?></button>
+      <?php /* In the page's language, like the menu: the 中文版 / English switch only changes the message text */ ?>
+      <div class="message-actions" role="group" aria-label="<?= t($lang, 'actions_label') ?>" hidden>
+        <button type="button" class="btn btn-ghost" data-print><?= t($lang, 'print') ?></button>
+        <button type="button" class="btn btn-ghost" data-print data-filename="<?= e($pdfName) ?>" title="<?= e(t($lang, 'download_hint')) ?>"><?= t($lang, 'download_pdf') ?></button>
       </div>
 <?php if (has_both_languages($message)): ?>
       <nav class="lang-toggle" aria-label="<?= t($lang, 'version_label') ?>">
