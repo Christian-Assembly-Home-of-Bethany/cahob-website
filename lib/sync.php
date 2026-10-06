@@ -25,6 +25,64 @@ function text_hash(string $html): string
 }
 
 /**
+ * Whether two cleaned texts say the same thing with the same formatting. Servers' HTML
+ * libraries differ in whitespace, entities, quoting and <br> vs <br />, so those don't count.
+ */
+function same_html(string $a, string $b): bool
+{
+    $normal = function (string $html): string {
+        $html = str_replace(["\u{00A0}", '&nbsp;', '&#160;'], ' ', $html);
+        $html = preg_replace('#\s*/?>#', '>', $html);        // <br /> and <br>, "x" > and "x">
+        $html = preg_replace('/\s+/u', ' ', $html);
+        $html = preg_replace('/\s*(<[^>]+>)\s*/', '$1', $html);
+        return trim(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    };
+    if ($normal($a) === $normal($b)) {
+        return true;
+    }
+    // Otherwise: the same words with the same formatting tags (and link targets), however the
+    // HTML around them is written.
+    $shape = function (string $html): string {
+        preg_match_all('#<(/?[a-z0-9]+)\b(?:[^>]*?\shref="([^"]*)")?[^>]*>#i', $html, $tags, PREG_SET_ORDER);
+        return plain_text($html) . '|' . implode(' ', array_map(fn(array $t): string => strtolower($t[1]) . (isset($t[2]) ? '=' . $t[2] : ''), $tags));
+    };
+    return $shape($a) === $shape($b);
+}
+
+/** Where two texts first differ, as a few words of each around that spot, for the sync preview. */
+function text_difference(string $oldHtml, string $newHtml, int $context = 30): array
+{
+    $old = plain_text($oldHtml);
+    $new = plain_text($newHtml);
+    $oldLength = mb_strlen($old);
+    $newLength = mb_strlen($new);
+    $start = 0;
+    while ($start < min($oldLength, $newLength) && mb_substr($old, $start, 1) === mb_substr($new, $start, 1)) {
+        $start++;
+    }
+    $end = 0;
+    while ($end < min($oldLength, $newLength) - $start && mb_substr($old, $oldLength - 1 - $end, 1) === mb_substr($new, $newLength - 1 - $end, 1)) {
+        $end++;
+    }
+    // Widen to whole words (Chinese has no spaces, so it stays character by character).
+    $wordChar = fn(string $char): bool => preg_match('/[\p{L}\p{N}]/u', $char) === 1 && preg_match('/\p{Han}/u', $char) === 0;
+    while ($start > 0 && $wordChar(mb_substr($old, $start - 1, 1))) {
+        $start--;
+    }
+    while ($end > 0 && $wordChar(mb_substr($old, $oldLength - $end, 1))) {
+        $end--;
+    }
+    $snippet = function (string $text, int $length) use ($start, $end, $context): string {
+        $from = max(0, $start - $context);
+        $changed = mb_substr($text, $start, max(0, $length - $end - $start));
+        return ($from > 0 ? '…' : '') . mb_substr($text, $from, $start - $from)
+            . '[' . mb_strimwidth($changed, 0, 160, '…', 'UTF-8') . ']'
+            . mb_substr($text, $length - $end, $context) . ($end > $context ? '…' : '');
+    };
+    return ['old' => $snippet($old, $oldLength), 'new' => $snippet($new, $newLength)];
+}
+
+/**
  * A title from a post's first real line. Skips "Last updated" notes, the series name (the
  * post's own label), and links; trims ending punctuation; keeps it to about 100 characters.
  */
@@ -115,7 +173,7 @@ function sync_plan(PDO $pdo, array $posts): array
             $plan['trash'][] = ['post' => $post, 'message' => $message, 'lang' => $lang];
         } elseif (text_hash($message['body_' . $lang]) !== $link['synced_hash']) {
             $plan['kept'][] = ['post' => $post, 'message' => $message, 'lang' => $lang];
-        } elseif ($post['clean'] === $message['body_' . $lang]) {
+        } elseif (same_html($post['clean'], $message['body_' . $lang])) {
             $plan['touch'][] = ['post' => $post, 'message' => $message, 'lang' => $lang];
         } else {
             $plan['update'][] = ['post' => $post, 'message' => $message, 'lang' => $lang];
@@ -141,7 +199,7 @@ function sync_plan(PDO $pdo, array $posts): array
     $linkOrUpdate = function (array $post, array $message) use (&$plan, $pdo): void {
         $current = $message['body_' . $post['lang']];
         $item = ['post' => $post, 'message' => $message, 'lang' => $post['lang']];
-        if ($post['clean'] === $current) {
+        if (same_html($post['clean'], $current)) {
             $plan['link'][] = $item;
         } elseif ($message['deleted_at'] === null && body_never_edited($pdo, $message, $post['lang'])) {
             $plan['update'][] = $item + ['link' => true]; // edited on Blogger after the import
@@ -281,8 +339,10 @@ function sync_apply(PDO $pdo, array $plan): array
 {
     $pdo->beginTransaction();
     try {
+        // Linked and unchanged posts already match the website's text (give or take formatting
+        // whitespace), so that text is what later syncs compare with to spot edits made on the site.
         foreach ($plan['link'] as $item) {
-            save_link($pdo, $item['post'], (int) $item['message']['id'], $item['lang'], $item['post']['clean']);
+            save_link($pdo, $item['post'], (int) $item['message']['id'], $item['lang'], $item['message']['body_' . $item['lang']]);
         }
         foreach ($plan['kept'] as $item) {
             if (!empty($item['link'])) {
@@ -294,7 +354,7 @@ function sync_apply(PDO $pdo, array $plan): array
             }
         }
         foreach ($plan['touch'] as $item) {
-            save_link($pdo, $item['post'], (int) $item['message']['id'], $item['lang'], $item['post']['clean']);
+            save_link($pdo, $item['post'], (int) $item['message']['id'], $item['lang'], $item['message']['body_' . $item['lang']]);
         }
         foreach ($plan['update'] as $item) {
             save_language($pdo, $item['message'], $item['lang'], $item['post']['clean']);

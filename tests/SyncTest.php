@@ -191,6 +191,45 @@ final class SyncTest extends TestCase
         $this->assertSame(4, $this->rows('messages'), 'The three imported messages plus the one new post.');
     }
 
+    public function testFormattingDifferencesFromAnotherServerStillLink(): void
+    {
+        // The live site's messages were imported on another computer, whose HTML library spaced
+        // things differently from the server's. That isn't an edit.
+        $this->imported([$this->post('en1', '2026-09-28T23:44:00Z', '<p>Two Lests</p><p>Text.</p>')]);
+        $id = (int) $this->pdo->query('SELECT id FROM messages')->fetchColumn();
+        $this->pdo->exec("UPDATE messages SET body_en = '<p>Two Lests</p>
+<p>Text.<br /></p>' WHERE id = $id");
+        $this->pdo->exec("UPDATE message_revisions SET body_en = '<p>Two Lests</p>
+<p>Text.<br /></p>' WHERE message_id = $id");
+
+        $plan = sync_plan($this->pdo, [$this->post('en1', '2026-09-28T23:44:00Z', '<p>Two Lests</p><p>Text.<br></p>')]);
+        $this->assertCount(1, $plan['link']);
+        $this->assertSame([], $plan['update']);
+        sync_apply($this->pdo, $plan);
+        $this->assertSame("<p>Two Lests</p>\n<p>Text.<br /></p>", $this->message($id)['body_en'], 'Not rewritten.');
+
+        // A real edit on Blogger later still comes through, rather than counting as a website edit.
+        $plan = sync_plan($this->pdo, [$this->post('en1', '2026-09-28T23:44:00Z', '<p>Two Lests</p><p>Better text.</p>', [], '2026-10-08T09:00:00Z')]);
+        $this->assertCount(1, $plan['update']);
+        $this->assertSame([], $plan['kept']);
+    }
+
+    public function testSameHtmlIgnoresOnlyFormattingWhitespace(): void
+    {
+        $this->assertTrue(same_html("<p>A <strong>b</strong></p>\n<p>c<br /></p>", '<p>A <strong>b</strong></p><p>c<br></p>'));
+        $this->assertTrue(same_html('<p>A&nbsp;b &amp; c</p>', '<p>A b &amp; c</p>'));
+        $this->assertFalse(same_html('<p>A b</p>', '<p>A c</p>'));
+        $this->assertFalse(same_html('<p>A b</p>', '<p>A <strong>b</strong></p>'), 'Bold is a real change.');
+        $this->assertTrue(same_html('<p style="text-align:center;">A</p>', "<p style='text-align: center'>A</p>"), 'Attribute spelling differs between libraries.');
+        $this->assertFalse(same_html('<p><a href="https://a.example/">A</a></p>', '<p><a href="https://b.example/">A</a></p>'), 'A new link target is a real change.');
+    }
+
+    public function testTheChangeIsShownInContext(): void
+    {
+        $change = text_difference('<p>Brothers and sisters, abide in Him today.</p>', '<p>Brothers and sisters, remain in Him today.</p>');
+        $this->assertSame(['old' => 'Brothers and sisters, [abide] in Him today.', 'new' => 'Brothers and sisters, [remain] in Him today.'], $change);
+    }
+
     public function testAPostEditedAfterTheImportUpdatesAnUneditedMessage(): void
     {
         $this->imported([$this->post('en1', '2026-09-28T23:44:00Z', '<p>Two Lests</p><p>Old text.</p>')]);
