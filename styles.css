@@ -1254,7 +1254,7 @@ html[lang="zh-Hant"] .message-meta {
 }
 
 /* Top right on a message, just under the header image, lined up with the right edge of the
-   text: Print, Download PDF, and the 中文版 / English version switch */
+   text: the Print button */
 .message-switch {
   max-width: 760px;
   padding-top: 20px;
@@ -1270,58 +1270,11 @@ html[lang="zh-Hant"] .message-meta {
   padding-top: 40px;
 }
 
-/* Print and Download PDF sit to the left of the language switch, and wrap above it on a phone */
-.message-switch {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px 16px;
-}
-
-.message-actions {
-  display: inline-flex;
-  gap: 8px;
-}
-
 .message-actions[hidden] {
   display: none;
 }
 
-/* The two halves share a border; the language being read is filled in */
-.lang-toggle {
-  display: inline-flex;
-}
-
-.lang-toggle .btn:first-child {
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-}
-
-.lang-toggle .btn:last-child {
-  margin-left: -2px;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-}
-
-.lang-toggle .btn:hover {
-  transform: none;
-}
-
-/* Capital English letters look bigger than 中文版 at the same size */
-.lang-toggle .btn[lang="en"] {
-  padding-left: 18px;
-  padding-right: 18px;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-}
-
-.lang-toggle .btn[aria-current="page"] {
-  position: relative;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-white);
-  cursor: default;
-}
-
-/* ---------- Printing a message (also how Download PDF saves one) ---------- */
+/* ---------- Printing a message (also how "Save as PDF" saves one) ---------- */
 
 @media print {
   @page {
