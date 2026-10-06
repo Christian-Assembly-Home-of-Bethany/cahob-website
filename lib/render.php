@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 13;
+const STYLES_VERSION = 14;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -45,12 +45,7 @@ const UI_TEXT = [
         'empty' => 'No messages yet. Please check back soon.',
         'all' => 'All messages',
         'other_version_lang' => 'zh-Hant',
-        'version_name' => 'English version',
-        'version_label' => 'Language',
-        'actions_label' => 'Print or save this message',
         'print' => 'Print',
-        'download_pdf' => 'Download PDF',
-        'download_hint' => 'Opens the print window. Choose "Save as PDF" there.',
         'only_other' => 'This message is available in Chinese only.',
         'only_this' => 'This message is available in English only.',
         'in_other' => '中文',
@@ -88,12 +83,7 @@ const UI_TEXT = [
         'empty' => '目前還沒有信息，請稍後再來。',
         'all' => '所有信息',
         'other_version_lang' => 'en',
-        'version_name' => '中文版',
-        'version_label' => '語言',
-        'actions_label' => '列印或儲存這篇信息',
         'print' => '列印',
-        'download_pdf' => '下載 PDF',
-        'download_hint' => '會開啟列印視窗，請在其中選擇「另存為 PDF」。',
         'only_other' => '此信息只有英文版。',
         'only_this' => '此信息只有中文版。',
         'in_other' => 'English',

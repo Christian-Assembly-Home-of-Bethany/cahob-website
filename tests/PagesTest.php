@@ -139,7 +139,7 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('Abiding in the Vine Opening words.', $html);
     }
 
-    public function testMessagePageShowsOneLanguageAndLinksToTheOther(): void
+    public function testMessagePageShowsOneLanguage(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
 
@@ -151,14 +151,11 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('<p>English body</p>', $html);
         $this->assertStringNotContainsString('中文內容', $html, 'The Chinese text is on its own page.');
         $this->assertStringNotContainsString('雙語信息', $html);
-        $this->assertStringContainsString('<nav class="lang-toggle" aria-label="Language">', $html);
-        $this->assertStringContainsString('<a href="/messages/both?version=zh" class="btn btn-ghost" lang="zh-Hant">中文版</a>', $html);
-        $this->assertStringContainsString('<a href="/messages/both" class="btn btn-ghost" lang="en" aria-current="page">English version</a>', $html);
-        $this->assertStringContainsString('<a href="/messages/both?version=zh" class="explore-link" lang="zh-Hant">中文版 <span aria-hidden="true">&rarr;</span></a>', $html);
         $this->assertStringContainsString('href="/messages-zh/both" class="lang-switch"', $html, 'The top bar switches the whole page to Chinese.');
+        $this->assertStringNotContainsString('?version=', $html, 'No separate 中文版 / English switch on the page.');
     }
 
-    public function testChineseVersionKeepsTheEnglishPage(): void
+    public function testOldVersionLinkStillShowsTheChineseText(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
 
@@ -174,9 +171,6 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('<p>中文內容</p>', $html);
         $this->assertStringNotContainsString('English body', $html);
         $this->assertStringNotContainsString('message-notice', $html);
-        $this->assertStringContainsString('<a href="/messages/both?version=zh" class="btn btn-ghost" lang="zh-Hant" aria-current="page">中文版</a>', $html);
-        $this->assertStringContainsString('<a href="/messages/both" class="btn btn-ghost" lang="en">English version</a>', $html);
-        $this->assertStringContainsString('<a href="/messages/both" class="explore-link" lang="en">English version <span aria-hidden="true">&rarr;</span></a>', $html);
         $this->assertStringContainsString('href="/messages-zh/both" class="lang-switch"', $html);
     }
 
@@ -188,14 +182,10 @@ final class PagesTest extends TestCase
 
         $this->assertStringContainsString('<p>中文內容</p>', $html);
         $this->assertStringNotContainsString('English body', $html);
-        $this->assertStringContainsString('<nav class="lang-toggle" aria-label="語言">', $html);
-        $this->assertStringContainsString('<a href="/messages-zh/both" class="btn btn-ghost" lang="zh-Hant" aria-current="page">中文版</a>', $html);
-        $this->assertStringContainsString('<a href="/messages-zh/both?version=en" class="btn btn-ghost" lang="en">English version</a>', $html);
-        $this->assertStringContainsString('<a href="/messages-zh/both?version=en" class="explore-link" lang="en">English version <span aria-hidden="true">&rarr;</span></a>', $html);
         $this->assertStringContainsString('<h1 class="hero-title fade-up">2026年10月2日</h1>', $html, 'No Chinese title, so the date is the heading.');
     }
 
-    public function testEnglishVersionKeepsTheChinesePage(): void
+    public function testOldVersionLinkStillShowsTheEnglishText(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'body_zh' => '<p>中文內容</p>']);
 
@@ -208,8 +198,6 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('<article class="content-narrow message-body" lang="en">', $html);
         $this->assertStringContainsString('<p>English body</p>', $html);
         $this->assertStringNotContainsString('中文內容', $html);
-        $this->assertStringContainsString('<a href="/messages-zh/both?version=en" class="btn btn-ghost" lang="en" aria-current="page">English version</a>', $html);
-        $this->assertStringContainsString('<a href="/messages-zh/both" class="explore-link" lang="zh-Hant">中文版 <span aria-hidden="true">&rarr;</span></a>', $html);
     }
 
     public function testUntitledVersionIsHeadedByTheDateInThePageLanguage(): void
@@ -235,52 +223,37 @@ final class PagesTest extends TestCase
         $this->assertStringNotContainsString('lang-toggle', $html, 'No language switch when there is only one language.');
     }
 
-    public function testMessagePageHasPrintAndDownloadButtons(): void
+    public function testMessagePageHasAPrintButton(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
 
         $html = $this->render('message.php', ['slug' => 'both']);
 
-        $this->assertStringContainsString('<div class="message-actions" role="group" aria-label="Print or save this message" lang="en" hidden>', $html, 'Hidden until script.js shows it.');
+        $this->assertStringContainsString('<div class="message-actions" lang="en" hidden>', $html, 'Hidden until script.js shows it.');
         $this->assertStringContainsString('<button type="button" class="btn btn-ghost" data-print>Print</button>', $html);
-        $this->assertStringContainsString('data-print data-filename="CAHOB 2026-10-02 Both languages" title="Opens the print window. Choose &quot;Save as PDF&quot; there.">Download PDF</button>', $html);
-        $this->assertLessThan(strpos($html, 'lang-toggle'), strpos($html, 'message-actions'), 'The buttons sit before the language switch.');
+        $this->assertStringNotContainsString('PDF', $html, 'No separate Download PDF button.');
     }
 
-    public function testChineseMessagePageNamesThePdfAfterTheChineseTitle(): void
+    public function testChineseMessagePageSaysPrintInChinese(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
         $html = $this->render('messages-zh/index.php', ['slug' => 'both']);
+        $this->assertStringContainsString('<div class="message-actions" lang="zh-Hant" hidden>', $html);
         $this->assertStringContainsString('>列印</button>', $html);
-        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 雙語信息"', $html);
-        $this->assertStringContainsString('>下載 PDF</button>', $html);
     }
 
-    public function testButtonsFollowTheLanguageBeingRead(): void
+    public function testPrintFollowsTheLanguageBeingRead(): void
     {
         $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
         $html = $this->render('messages/index.php', ['slug' => 'both', 'version' => 'zh']);
-        $this->assertStringContainsString('aria-label="列印或儲存這篇信息" lang="zh-Hant" hidden>', $html, 'English site, Chinese text: Chinese buttons.');
-        $this->assertStringContainsString('>列印</button>', $html);
-        $this->assertStringContainsString('>下載 PDF</button>', $html);
-        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 雙語信息"', $html);
+        $this->assertStringContainsString('>列印</button>', $html, 'An old ?version=zh link: Chinese text, so 列印.');
     }
 
-    public function testChineseSiteShowingEnglishTextHasEnglishButtons(): void
-    {
-        $this->add('both', ['title_en' => 'Both languages', 'body_en' => '<p>English body</p>', 'title_zh' => '雙語信息', 'body_zh' => '<p>中文內容</p>']);
-        $html = $this->render('messages-zh/index.php', ['slug' => 'both', 'version' => 'en']);
-        $this->assertStringContainsString('aria-label="Print or save this message" lang="en" hidden>', $html);
-        $this->assertStringContainsString('>Print</button>', $html);
-        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02 Both languages"', $html);
-    }
-
-    public function testOneLanguageUntitledMessageStillHasTheButtons(): void
+    public function testOneLanguageUntitledMessageStillHasThePrintButton(): void
     {
         $this->add('untitled', ['body_zh' => '<p>中文內容</p>']);
         $html = $this->render('message.php', ['slug' => 'untitled']);
-        $this->assertStringContainsString('data-filename="CAHOB 2026-10-02"', $html, 'No title: just the date.');
-        $this->assertStringNotContainsString('lang-toggle', $html);
+        $this->assertStringContainsString('>列印</button>', $html, 'Chinese-only text on the English site: printing Chinese, so 列印.');
     }
 
     public function testVersionThatWasNotWrittenFallsBackWithTheRightNote(): void
