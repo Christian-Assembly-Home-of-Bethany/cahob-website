@@ -15,7 +15,7 @@ $admin = require_admin();
 $pdo = db();
 
 $name = fn(string $field): string => mb_substr(trim(preg_replace('/\s+/u', ' ', mb_scrub(post_text($field), 'UTF-8'))), 0, CATEGORY_NAME_MAX);
-$id = fn(mixed $value): int => ctype_digit((string) $value) ? (int) $value : 0;
+$id = fn(mixed $value): int => is_string($value) && ctype_digit($value) ? (int) $value : 0;
 
 $error = null;
 $typed = ['name_zh' => '', 'name_en' => ''];
@@ -88,7 +88,7 @@ if ($error !== null) {
           <input type="hidden" name="id" value="<?= $cid ?>" />
           <label><span><?= at('col_name_zh') ?></span><input type="text" name="name_zh" value="<?= e($category['name_zh']) ?>" maxlength="<?= CATEGORY_NAME_MAX ?>" lang="zh-Hant" required /></label>
           <label><span><?= at('col_name_en') ?></span><input type="text" name="name_en" value="<?= e($category['name_en']) ?>" maxlength="<?= CATEGORY_NAME_MAX ?>" lang="en" required /></label>
-          <span class="category-row-count"><?= at('col_count') ?>: <?= (int) ($usage[$cid] ?? 0) ?></span>
+          <span class="category-row-count"><?= at('col_count', (int) ($usage[$cid] ?? 0)) ?></span>
           <span class="category-row-actions">
             <button type="submit" class="btn btn-ghost admin-btn"><?= at('save') ?></button>
             <a href="/admin/categories.php?delete=<?= $cid ?>" class="danger-link"><?= at('delete') ?></a>
