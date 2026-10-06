@@ -14,4 +14,4 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_ok()) {
 }
 
 log_out();
-redirect('/admin/login.php?loggedout=1');
+redirect(admin_url('login', ['loggedout' => 1]));

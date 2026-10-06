@@ -14,8 +14,9 @@ Edit those `.txt` files, not the HTML, to change that text.
 The Messages section (`messages.php`, `message.php`, `admin/`) is a PHP + SQLite app; see
 `plans/messages-cms.md`. Visitors use clean URLs (`/messages/`, `/messages-zh/<slug>`): the
 `messages/` and `messages-zh/` folders route to those PHP files, and the old `.php` addresses
-301-redirect to them. Build links with `list_url()` / `message_url()`, never by hand. The
-Messages pages draw the navbar and footer from `lib/render.php`, so a nav change goes in the
+301-redirect to them. Build links with `list_url()` / `message_url()`, never by hand. Admin
+pages have no `.php` in their addresses either (`/admin/edit?id=5`, via `admin/.htaccess`):
+build those with `admin_url()`. The Messages pages draw the navbar and footer from `lib/render.php`, so a nav change goes in the
 six `.html` files **and** `render.php`. All of the section's interface text lives in
 `UI_TEXT` / `ADMIN_TEXT` in `lib/render.php`, and every key needs both English and Chinese.
 

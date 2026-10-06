@@ -80,7 +80,7 @@ final class AdminPagesTest extends TestCase
         $this->assertStringContainsString('status-badge--published">已發佈', $html);
         $this->assertStringContainsString('<span class="untitled-tag">無標題</span> <span class="untitled-text">Abiding in the Vine opening words</span>', $html);
         $this->assertLessThan(strpos($html, '已發佈的信息'), strpos($html, 'Draft in English'), 'Newest first.');
-        $this->assertStringContainsString('href="/admin/edit.php"', $html);
+        $this->assertStringContainsString('href="/admin/edit"', $html);
     }
 
     public function testDashboardShowsTheLatestSecurityEvents(): void
@@ -146,7 +146,7 @@ final class AdminPagesTest extends TestCase
         $this->assertStringContainsString('name="name_zh" value="羅馬書"', $html);
         $this->assertStringContainsString('name="name_en" value="Romans"', $html);
         $this->assertStringContainsString('信息數：2', $html, 'Drafts count too: deleting the category affects them.');
-        $this->assertStringContainsString('href="/admin/categories.php?delete=' . $romans . '"', $html);
+        $this->assertStringContainsString('href="/admin/categories?delete=' . $romans . '"', $html);
     }
 
     public function testMalformedCategoryIdIsIgnored(): void
@@ -244,7 +244,7 @@ final class AdminPagesTest extends TestCase
         $html = $this->render('delete.php', ['id' => (string) $id]);
         $this->assertStringContainsString('確定要刪除這篇信息嗎？', $html);
         $this->assertStringContainsString('要刪除的信息', $html);
-        $this->assertStringContainsString('<form method="post" action="/admin/delete.php?id=' . $id . '"', $html);
+        $this->assertStringContainsString('<form method="post" action="/admin/delete?id=' . $id . '"', $html);
         $this->assertNotNull(find_message(db(), $id), 'Opening the page deletes nothing.');
     }
 
@@ -259,8 +259,8 @@ final class AdminPagesTest extends TestCase
         $this->assertStringContainsString('已刪除信息。', $html);
         $this->assertStringContainsString('<details class="deleted-panel" open>', $html, 'Opened right after deleting, so it is clear where it went.');
         $this->assertStringContainsString('已刪除的信息（1）', $html);
-        $this->assertStringContainsString('<form method="post" action="/admin/restore.php?id=' . $gone . '">', $html);
-        $this->assertStringNotContainsString('href="/admin/edit.php?id=' . $gone . '"', $html, 'A deleted message is restored before it can be edited.');
+        $this->assertStringContainsString('<form method="post" action="/admin/restore?id=' . $gone . '">', $html);
+        $this->assertStringNotContainsString('href="/admin/edit?id=' . $gone . '"', $html, 'A deleted message is restored before it can be edited.');
         $this->assertLessThan(strpos($html, 'deleted-panel'), strpos($html, '還在的信息'));
         $this->assertGreaterThan(strpos($html, 'deleted-panel'), strpos($html, '刪掉的信息'));
     }
@@ -315,9 +315,9 @@ final class AdminPagesTest extends TestCase
         $this->assertStringContainsString('<p>一</p></div>', $html);
         $this->assertStringContainsString('value="2026-09-01T11:00"', $html);
         $this->assertStringContainsString('的版本，還沒有儲存。按「更新」就會還原成這個版本。', $html);
-        $this->assertStringContainsString('<a href="/admin/edit.php?id=' . $id . '">不要還原，回到目前版本</a>', $html);
+        $this->assertStringContainsString('<a href="/admin/edit?id=' . $id . '">不要還原，回到目前版本</a>', $html);
         $this->assertStringContainsString('<option value="' . $first['id'] . '" selected>', $html);
-        $this->assertStringContainsString('<form method="post" action="/admin/edit.php?id=' . $id . '"', $html, 'Saving goes to the message, not the version.');
+        $this->assertStringContainsString('<form method="post" action="/admin/edit?id=' . $id . '"', $html, 'Saving goes to the message, not the version.');
         $this->assertSame('第二版', find_message(db(), $id)['title_zh'], 'Loading a version changes nothing.');
     }
 

@@ -91,6 +91,39 @@ function safe_admin_path(mixed $back): string
     return $back;
 }
 
+/**
+ * An admin page's address, without .php: admin_url('edit', ['id' => 5]) is /admin/edit?id=5.
+ * admin/.htaccess (and dev_router.php locally) runs edit.php for it.
+ */
+function admin_url(string $page, array $query = []): string
+{
+    $url = '/admin/' . ($page === 'index' ? '' : $page);
+    return $query ? $url . '?' . http_build_query($query) : $url;
+}
+
+/** Where an old admin address (/admin/edit.php?id=5) now lives, or null if $path isn't one. */
+function old_admin_url(string $path, string $query): ?string
+{
+    if (!preg_match('#^/admin/([a-z]+)\.php$#', $path, $m)) {
+        return null;
+    }
+    return admin_url($m[1]) . ($query !== '' ? '?' . $query : '');
+}
+
+/** Sends old .php admin links to the clean address. GET only, so a form posted to one still works. */
+function redirect_old_admin_url(): void
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+        return;
+    }
+    $path = rawurldecode(explode('?', (string) ($_SERVER['REQUEST_URI'] ?? ''), 2)[0]);
+    $url = old_admin_url($path, (string) ($_SERVER['QUERY_STRING'] ?? ''));
+    if ($url !== null) {
+        header('Location: ' . $url, true, 301);
+        exit;
+    }
+}
+
 function utc_seconds(int $time): string
 {
     return gmdate('Y-m-d H:i:s', $time);
@@ -151,9 +184,10 @@ function start_admin_session(): void
     session_start();
 }
 
-/** Headers for every admin page: never cached, never framed, never indexed. */
+/** Start of every admin page: old .php links go to the clean address, and the page is never cached, framed, or indexed. */
 function send_admin_headers(): void
 {
+    redirect_old_admin_url();
     header('Cache-Control: no-store');
     header('X-Frame-Options: DENY');
     header("Content-Security-Policy: frame-ancestors 'none'");
@@ -252,7 +286,7 @@ function require_admin(): string
         if ($here !== '/admin/' && safe_admin_path($here) === $here) {
             $query['next'] = $here;
         }
-        redirect('/admin/login.php' . ($query ? '?' . http_build_query($query) : ''));
+        redirect(admin_url('login', $query));
     }
     return $admin;
 }

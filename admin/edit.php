@@ -1,5 +1,5 @@
 <?php
-// The message editor: /admin/edit.php for a new message, /admin/edit.php?id=N to edit one.
+// The message editor: /admin/edit for a new message, /admin/edit?id=N to edit one.
 // Chinese and English sit side by side (stacked on a phone), each with an optional title and a
 // Quill editor. The form handling itself is in lib/editor.php. Below the form, the version
 // history loads an earlier saved version into the form (?id=N&revision=R); saving it restores it.
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $result = apply_editor_action(db(), $existing, $_POST, $action);
         if (isset($result['id'])) {
-            redirect('/admin/edit.php?id=' . $result['id'] . '&notice=' . $result['notice'] . ($existing === null ? '&created=1' : ''));
+            redirect(admin_url('edit', ['id' => $result['id'], 'notice' => $result['notice']] + ($existing === null ? ['created' => 1] : [])));
         }
         $errors = $result['errors'];
         $submitted = $result['message'];
@@ -73,7 +73,7 @@ $categories = all_categories(db());
 $isPublished = $message['status'] === 'published';
 $saveButton = at($isPublished ? 'btn_update' : 'btn_save_draft');
 $notice = in_array($_GET['notice'] ?? '', EDITOR_NOTICES, true) ? $_GET['notice'] : null;
-$formAction = '/admin/edit.php' . ($existing !== null ? '?id=' . (int) $existing['id'] : '');
+$formAction = admin_url('edit', $existing !== null ? ['id' => (int) $existing['id']] : []);
 $publicLang = admin_lang() === 'zh' ? 'zh' : 'en';
 
 $labels = ['locale' => admin_lang() === 'zh' ? 'zh-TW' : 'en-US'];
@@ -114,10 +114,10 @@ foreach ($errors as $error) {
 <?php if ($revision !== null): ?>
       <p class="admin-alert admin-alert--notice revision-banner" role="status">
         <span><?= e(at('revision_loaded', format_date_time($revision['saved_at'], admin_lang()), $saveButton)) ?></span>
-        <a href="/admin/edit.php?id=<?= (int) $existing['id'] ?>"><?= at('revision_cancel') ?></a>
+        <a href="<?= e(admin_url('edit', ['id' => (int) $existing['id']])) ?>"><?= at('revision_cancel') ?></a>
       </p>
 <?php endif; ?>
-      <p class="admin-alert admin-alert--error" id="session-lost" role="alert" hidden><?= at('session_lost') ?> <a href="/admin/login.php" target="_blank" rel="noopener"><?= at('log_in_again') ?></a></p>
+      <p class="admin-alert admin-alert--error" id="session-lost" role="alert" hidden><?= at('session_lost') ?> <a href="<?= admin_url('login') ?>" target="_blank" rel="noopener"><?= at('log_in_again') ?></a></p>
       <div class="admin-alert admin-alert--notice restore-banner" id="restore-banner" role="status" hidden>
         <span id="restore-text"></span>
         <button type="button" class="admin-small-button" id="restore-button"><?= at('restore') ?></button>
@@ -142,7 +142,7 @@ foreach ($errors as $error) {
             <option value="<?= (int) $option['id'] ?>"<?= (int) $option['id'] === $values['category_id'] ? ' selected' : '' ?>><?= e(category_name($option, admin_lang())) ?></option>
 <?php endforeach; ?>
           </select>
-          <a href="/admin/categories.php" target="_blank" rel="noopener" class="admin-text-link"><?= at('manage_categories') ?><span class="visually-hidden"> <?= at('new_tab') ?></span></a>
+          <a href="<?= admin_url('categories') ?>" target="_blank" rel="noopener" class="admin-text-link"><?= at('manage_categories') ?><span class="visually-hidden"> <?= at('new_tab') ?></span></a>
         </div>
 
         <div class="editor-columns">
@@ -163,11 +163,11 @@ foreach ($errors as $error) {
         <div class="editor-actions">
 <?php if ($isPublished): ?>
           <button type="submit" name="action" value="update" class="btn btn-primary admin-btn"><?= at('btn_update') ?></button>
-          <button type="submit" name="action" value="preview" formaction="/admin/preview.php" formtarget="_blank" class="btn btn-ghost admin-btn"><?= at('btn_preview') ?></button>
+          <button type="submit" name="action" value="preview" formaction="<?= admin_url('preview') ?>" formtarget="_blank" class="btn btn-ghost admin-btn"><?= at('btn_preview') ?></button>
           <button type="submit" name="action" value="unpublish" class="btn btn-ghost admin-btn"><?= at('btn_unpublish') ?></button>
 <?php else: ?>
           <button type="submit" name="action" value="draft" class="btn btn-ghost admin-btn"><?= at('btn_save_draft') ?></button>
-          <button type="submit" name="action" value="preview" formaction="/admin/preview.php" formtarget="_blank" class="btn btn-ghost admin-btn"><?= at('btn_preview') ?></button>
+          <button type="submit" name="action" value="preview" formaction="<?= admin_url('preview') ?>" formtarget="_blank" class="btn btn-ghost admin-btn"><?= at('btn_preview') ?></button>
           <button type="submit" name="action" value="publish" class="btn btn-primary admin-btn"><?= at('btn_publish') ?></button>
 <?php endif; ?>
         </div>
@@ -182,7 +182,7 @@ foreach ($errors as $error) {
         <p class="admin-intro"><?= at('history_only_one') ?></p>
 <?php else: ?>
         <p class="admin-intro"><?= e(at('history_intro', $saveButton)) ?></p>
-        <form method="get" action="/admin/edit.php" class="history-form">
+        <form method="get" action="<?= admin_url('edit') ?>" class="history-form">
           <input type="hidden" name="id" value="<?= (int) $existing['id'] ?>" />
           <label for="revision"><?= at('history_label') ?></label>
           <select id="revision" name="revision">

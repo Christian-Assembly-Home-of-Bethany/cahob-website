@@ -24,8 +24,8 @@ admin_header(at('messages_title'), $admin);
         <h1><?= at('messages_title') ?></h1>
         <div class="admin-heading-actions">
           <a href="<?= list_url($publicLang) ?>" class="admin-text-link" target="_blank" rel="noopener"><?= at('view_messages') ?><span class="visually-hidden"> <?= at('new_tab') ?></span></a>
-          <a href="/admin/categories.php" class="admin-text-link"><?= at('manage_categories') ?></a>
-          <a href="/admin/edit.php" class="btn btn-primary admin-btn">＋ <?= at('new_message') ?></a>
+          <a href="<?= admin_url('categories') ?>" class="admin-text-link"><?= at('manage_categories') ?></a>
+          <a href="<?= admin_url('edit') ?>" class="btn btn-primary admin-btn">＋ <?= at('new_message') ?></a>
         </div>
       </div>
 <?php if (isset($_GET['deleted'])) {
@@ -58,7 +58,7 @@ admin_header(at('messages_title'), $admin);
 ?>
             <tr>
               <td class="message-table-title">
-                <a href="/admin/edit.php?id=<?= (int) $message['id'] ?>" lang="<?= t($label['lang'], 'html_lang') ?>"><?php if ($label['untitled']): ?><span class="untitled-tag"><?= at('untitled') ?></span> <span class="untitled-text"><?= e($label['text']) ?></span><?php else: ?><?= e($label['text']) ?><?php endif; ?></a>
+                <a href="<?= e(admin_url('edit', ['id' => (int) $message['id']])) ?>" lang="<?= t($label['lang'], 'html_lang') ?>"><?php if ($label['untitled']): ?><span class="untitled-tag"><?= at('untitled') ?></span> <span class="untitled-text"><?= e($label['text']) ?></span><?php else: ?><?= e($label['text']) ?><?php endif; ?></a>
               </td>
               <td><span class="status-badge status-badge--<?= $message['status'] ?>"><?= at($published ? 'status_published' : 'status_draft') ?></span></td>
               <td class="message-table-date"><time datetime="<?= iso_date($date) ?>"><?= format_date($date, $lang) ?></time></td>
@@ -68,11 +68,11 @@ admin_header(at('messages_title'), $admin);
 <?php endforeach; ?>
               </td>
               <td class="message-table-actions">
-                <a href="/admin/edit.php?id=<?= (int) $message['id'] ?>"><?= at('edit') ?></a>
+                <a href="<?= e(admin_url('edit', ['id' => (int) $message['id']])) ?>"><?= at('edit') ?></a>
 <?php if ($published): ?>
                 <a href="<?= e(message_url($message, $publicLang)) ?>" target="_blank" rel="noopener"><?= at('view') ?><span class="visually-hidden"> <?= at('new_tab') ?></span></a>
 <?php endif; ?>
-                <a href="/admin/delete.php?id=<?= (int) $message['id'] ?>" class="danger-link"><?= at('delete') ?></a>
+                <a href="<?= e(admin_url('delete', ['id' => (int) $message['id']])) ?>" class="danger-link"><?= at('delete') ?></a>
               </td>
             </tr>
 <?php endforeach; ?>
@@ -104,7 +104,7 @@ admin_header(at('messages_title'), $admin);
                 <td><span class="status-badge status-badge--<?= $message['status'] ?>"><?= at($message['status'] === 'published' ? 'status_published' : 'status_draft') ?></span></td>
                 <td class="message-table-date"><time datetime="<?= iso_date($message['deleted_at']) ?>"><?= format_date_time($message['deleted_at'], $lang) ?></time></td>
                 <td class="message-table-actions">
-                  <form method="post" action="/admin/restore.php?id=<?= (int) $message['id'] ?>">
+                  <form method="post" action="<?= e(admin_url('restore', ['id' => (int) $message['id']])) ?>">
                     <?= csrf_field() ?>
                     <button type="submit" class="admin-small-button admin-small-button--plain"><?= at('restore') ?></button>
                   </form>
