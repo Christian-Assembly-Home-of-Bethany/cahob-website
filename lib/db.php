@@ -18,7 +18,7 @@ function db_open(string $path): PDO
 /**
  * Creates the tables on first run and applies any later schema changes. SQLite's
  * user_version records which changes a database already has, so this is safe to call on
- * every request.
+ * every request. A change is SQL, or a function for changes SQL can't make (like slugify()).
  */
 function db_migrate(PDO $pdo): void
 {
@@ -96,6 +96,69 @@ function db_migrate(PDO $pdo): void
             UPDATE messages SET category_id = (SELECT id FROM categories WHERE slug = 'romans')
               WHERE category_id IS NULL AND slug IN ('2026-08-02', '2026-08-16', '2026-08-24');
             SQL,
+        // Titles for the messages imported from Blogger, whose titles were only the first line of
+        // the text. Only fills empty titles, so nothing the pastor typed is replaced, and the
+        // links stay the same (published slugs never change).
+        4 => <<<'SQL'
+            UPDATE messages SET title_en = 'Who Are We? Part Two: The Revelation of Jesus Christ' WHERE slug = '2026-07-19' AND title_en = '';
+            UPDATE messages SET title_en = 'Marriage Must Always Be Understood from God''s Perspective' WHERE slug = '2026-07-20' AND title_en = '';
+            UPDATE messages SET title_zh = '婚姻必須始終從神的角度來理解' WHERE slug = '2026-07-20' AND title_zh = '';
+            UPDATE messages SET title_en = 'Who Are We? Part 3-1: A Fragrance of Christ' WHERE slug = '2026-07-27' AND title_en = '';
+            UPDATE messages SET title_zh = '我們是誰（三之一）：基督的馨香之氣' WHERE slug = '2026-07-27' AND title_zh = '';
+            UPDATE messages SET title_en = 'Who Are We? Part 3-2: A Fragrance of Christ' WHERE slug = '2026-07-31' AND title_en = '';
+            UPDATE messages SET title_zh = '我們是誰（三之二）：基督的馨香之氣' WHERE slug = '2026-07-31' AND title_zh = '';
+            UPDATE messages SET title_en = 'The Apostle and the Gospel of God (1)' WHERE slug = '2026-08-02' AND title_en = '';
+            UPDATE messages SET title_zh = '使徒保羅與神的福音（一）' WHERE slug = '2026-08-02' AND title_zh = '';
+            UPDATE messages SET title_en = 'Marriage Must Always Be Understood from God''s Perspective' WHERE slug = '2026-08-07' AND title_en = '';
+            UPDATE messages SET title_zh = '婚姻必須始終從神的角度來理解' WHERE slug = '2026-08-07' AND title_zh = '';
+            UPDATE messages SET title_en = 'Who Are We? Part 3-3: A Fragrance of Christ' WHERE slug = '2026-08-07-2' AND title_en = '';
+            UPDATE messages SET title_zh = '我們是誰（三之三）：基督的馨香之氣' WHERE slug = '2026-08-07-2' AND title_zh = '';
+            UPDATE messages SET title_en = 'Called into the Fellowship of His Son' WHERE slug = '2026-08-16' AND title_en = '';
+            UPDATE messages SET title_zh = '蒙召進入祂兒子的交通' WHERE slug = '2026-08-16' AND title_zh = '';
+            UPDATE messages SET title_en = 'Called According to His Purpose' WHERE slug = '2026-08-24' AND title_en = '';
+            UPDATE messages SET title_zh = '按著祂的旨意被召' WHERE slug = '2026-08-24' AND title_zh = '';
+            UPDATE messages SET title_en = 'Classical Christian Education' WHERE slug = '2026-08-25' AND title_en = '';
+            UPDATE messages SET title_zh = '基督教古典教育' WHERE slug = '2026-08-25' AND title_zh = '';
+            UPDATE messages SET title_en = 'Train Up a Child in the Way He Should Go (Chapter 1)' WHERE slug = '2026-09-16' AND title_en = '';
+            UPDATE messages SET title_zh = '教養孩童，使他走當行的道（第一章）' WHERE slug = '2026-09-16' AND title_zh = '';
+            UPDATE messages SET title_en = 'Moralistic Therapeutic Deism and the American Church' WHERE slug = '2026-09-24' AND title_en = '';
+            UPDATE messages SET title_zh = '道德主義治療式自然神論與美國教會' WHERE slug = '2026-09-24' AND title_zh = '';
+            UPDATE messages SET title_en = 'Two “Lests” and One “Holding Fast”' WHERE slug = '2026-09-28' AND title_en = '';
+            UPDATE messages SET title_zh = '兩個「免得」與一個「持守」' WHERE slug = '2026-09-28' AND title_zh = '';
+            UPDATE messages SET title_en = 'Spiritual Principles in the Formation of Faith Across Generations' WHERE slug = '2026-10-02' AND title_en = '';
+            UPDATE messages SET title_zh = '世代信仰形成的屬靈原則' WHERE slug = '2026-10-02' AND title_zh = '';
+            UPDATE messages SET title_en = 'Train Up a Child in the Way He Should Go (Chapter 2)' WHERE slug = '2026-10-05' AND title_en = '';
+            UPDATE messages SET title_zh = '教養孩童，使他走當行的道（第二章）' WHERE slug = '2026-10-05' AND title_zh = '';
+
+            -- A version for each message that got a title, so the untitled one can be restored.
+            INSERT INTO message_revisions (message_id, title_en, body_en, title_zh, body_zh, status, published_at)
+              SELECT m.id, m.title_en, m.body_en, m.title_zh, m.body_zh, m.status, m.published_at FROM messages m
+              JOIN message_revisions r ON r.id = (SELECT MAX(id) FROM message_revisions WHERE message_id = m.id)
+              WHERE m.slug IN ('2026-07-19', '2026-07-20', '2026-07-27', '2026-07-31', '2026-08-02', '2026-08-07', '2026-08-07-2', '2026-08-16', '2026-08-24', '2026-08-25', '2026-09-16', '2026-09-24', '2026-09-28', '2026-10-02', '2026-10-05')
+                AND (r.title_en <> m.title_en OR r.title_zh <> m.title_zh);
+            SQL,
+        // Links from titles instead of dates: published messages with a date slug and an English
+        // title get a slug from that title. The old date slug keeps working as a redirect.
+        5 => function (PDO $pdo): void {
+            $pdo->exec(<<<'SQL'
+                CREATE TABLE slug_redirects (
+                  old_slug   TEXT PRIMARY KEY,
+                  message_id INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE
+                );
+                SQL);
+            $dated = $pdo->query(
+                "SELECT * FROM messages WHERE title_en <> '' AND slug GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*'
+                 ORDER BY published_at, id"
+            )->fetchAll();
+            foreach ($dated as $message) {
+                $base = slugify($message['title_en']);
+                if ($base === '') {
+                    continue;
+                }
+                $pdo->prepare('INSERT INTO slug_redirects (old_slug, message_id) VALUES (?, ?)')->execute([$message['slug'], $message['id']]);
+                $pdo->prepare('UPDATE messages SET slug = ? WHERE id = ?')->execute([unique_slug($pdo, $base, (int) $message['id']), $message['id']]);
+            }
+        },
     ];
 
     $current = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -104,7 +167,7 @@ function db_migrate(PDO $pdo): void
             continue;
         }
         $pdo->beginTransaction();
-        $pdo->exec($sql);
+        is_callable($sql) ? $sql($pdo) : $pdo->exec($sql);
         $pdo->exec("PRAGMA user_version = $version");
         $pdo->commit();
     }
@@ -137,6 +200,17 @@ function published_messages(PDO $pdo, int $limit, int $offset, ?int $categoryId 
     $query->bindValue(':offset', $offset, PDO::PARAM_INT);
     $query->execute();
     return $query->fetchAll();
+}
+
+/** The published message an old slug (from before it had a title) now points to. */
+function find_redirect(PDO $pdo, string $oldSlug): ?array
+{
+    $query = $pdo->prepare(
+        "SELECT m.* FROM slug_redirects r JOIN messages m ON m.id = r.message_id
+         WHERE r.old_slug = ? AND m.status = 'published' AND m.deleted_at IS NULL"
+    );
+    $query->execute([$oldSlug]);
+    return $query->fetch() ?: null;
 }
 
 function find_published(PDO $pdo, string $slug): ?array
@@ -180,13 +254,19 @@ function slugify(string $title): string
     return trim($slug, '-');
 }
 
-/** $base, or $base-2, $base-3, ... if another message already uses it. */
+/**
+ * $base, or $base-2, $base-3, ... if another message already uses it, either as its slug or as
+ * an old slug that redirects to it (so an old shared link never shows a different message).
+ */
 function unique_slug(PDO $pdo, string $base, ?int $exceptId = null): string
 {
-    $taken = $pdo->prepare('SELECT 1 FROM messages WHERE slug = ? AND id IS NOT ?');
+    $taken = $pdo->prepare(
+        'SELECT 1 FROM messages WHERE slug = :slug AND id IS NOT :id
+         UNION ALL SELECT 1 FROM slug_redirects WHERE old_slug = :slug AND message_id IS NOT :id'
+    );
     for ($n = 1; ; $n++) {
         $slug = $n === 1 ? $base : "$base-$n";
-        $taken->execute([$slug, $exceptId]);
+        $taken->execute(['slug' => $slug, 'id' => $exceptId]);
         if ($taken->fetchColumn() === false) {
             return $slug;
         }

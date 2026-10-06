@@ -18,6 +18,12 @@ redirect_legacy_url();
 
 $message = $slug === '' ? null : find_published(db(), $slug);
 if ($message === null) {
+    // A link from before the message had a title (e.g. /messages/2026-09-28) goes to its new address.
+    $moved = $slug === '' ? null : find_redirect(db(), $slug);
+    if ($moved !== null) {
+        header('Location: ' . message_url($moved, $lang, $version), true, 301);
+        exit;
+    }
     not_found_page($lang);
     return;
 }
