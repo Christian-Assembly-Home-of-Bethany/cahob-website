@@ -78,3 +78,20 @@ document.querySelectorAll("[data-content]").forEach(async (container) => {
   }
   watchReveals(container);
 });
+
+// Print and Download PDF on a message page. Both open the print window; Download PDF first
+// sets the page title, which browsers use as the saved PDF's file name.
+const messageActions = document.querySelector(".message-actions");
+if (messageActions) {
+  messageActions.hidden = false;
+  messageActions.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-print]");
+    if (!button) return;
+    const title = document.title;
+    if (button.dataset.filename) {
+      document.title = button.dataset.filename;
+      window.addEventListener("afterprint", () => { document.title = title; }, { once: true });
+    }
+    window.print();
+  });
+}

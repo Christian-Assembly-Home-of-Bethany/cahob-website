@@ -1127,7 +1127,8 @@ html[lang="zh-Hant"] .message-meta {
 }
 
 /* Top right, just under the header image, lined up with the right edge of the text: the
-   pastor's sign-in button on the list, and the 中文版 / English version switch on a message */
+   pastor's sign-in button on the list, and Print, Download PDF, and the 中文版 / English
+   version switch on a message */
 .message-signin,
 .message-switch {
   max-width: 760px;
@@ -1144,6 +1145,23 @@ html[lang="zh-Hant"] .message-meta {
 .message-signin + .section,
 .message-switch + .section {
   padding-top: 40px;
+}
+
+/* Print and Download PDF sit to the left of the language switch, and wrap above it on a phone */
+.message-switch {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 16px;
+}
+
+.message-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.message-actions[hidden] {
+  display: none;
 }
 
 /* The two halves share a border; the language being read is filled in */
@@ -1178,4 +1196,112 @@ html[lang="zh-Hant"] .message-meta {
   border-color: var(--color-primary);
   color: var(--color-white);
   cursor: default;
+}
+
+/* ---------- Printing a message (also how Download PDF saves one) ---------- */
+
+@media print {
+  @page {
+    margin: 18mm 16mm;
+  }
+
+  .navbar,
+  .site-footer,
+  .message-switch,
+  .message-nav,
+  .message-notice,
+  .hero-overlay,
+  .hero-eyebrow {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  /* The header image doesn't print, so its white text turns dark and the space goes away */
+  .hero,
+  .hero--message {
+    display: block;
+    min-height: 0;
+    padding: 0 0 14pt;
+    background: none !important;
+    color: #000;
+    text-align: left;
+  }
+
+  .hero-content,
+  .container,
+  .content-narrow {
+    width: auto;
+    max-width: none;
+    margin: 0;
+  }
+
+  .hero--message .hero-title {
+    color: #000;
+    font-size: 22pt;
+    margin-bottom: 4pt;
+  }
+
+  .hero-tagline {
+    font-size: 11pt;
+    font-style: normal;
+    margin: 0;
+  }
+
+  /* Never print something still waiting for its fade-in */
+  .fade-up,
+  .js .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .section {
+    padding: 0;
+  }
+
+  .message-body {
+    font-size: 11.5pt;
+    line-height: 1.6;
+  }
+
+  .message-body h2,
+  .message-body h3,
+  .message-body h4 {
+    break-after: avoid;
+  }
+
+  .message-body blockquote,
+  .message-body table,
+  .message-body li {
+    break-inside: avoid;
+  }
+
+  /* Black text and grey lines instead of the site's blues, for black-and-white printers */
+  .hero-title,
+  .hero-tagline,
+  .message-body,
+  .message-body * {
+    color: #000 !important;
+  }
+
+  .message-body blockquote {
+    border-left-color: #777;
+  }
+
+  .message-body hr {
+    background: #999;
+  }
+
+  .message-body th,
+  .message-body td {
+    border-color: #999;
+  }
+
+  .message-body th {
+    background: #eee;
+  }
 }
