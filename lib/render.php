@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 11;
+const STYLES_VERSION = 12;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -58,6 +58,9 @@ const UI_TEXT = [
         'not_found_text' => 'It may have been moved or removed.',
         'see_all' => 'See all messages',
         'sign_in' => 'Sign in',
+        'categories' => 'Categories',
+        'all_categories' => 'All messages',
+        'more_in' => 'More in %s',
     ],
     'zh' => [
         'html_lang' => 'zh-Hant',
@@ -99,6 +102,9 @@ const UI_TEXT = [
         'not_found_text' => '它可能已被移動或刪除。',
         'see_all' => '查看所有信息',
         'sign_in' => '登入',
+        'categories' => '分類',
+        'all_categories' => '所有信息',
+        'more_in' => '更多「%s」',
     ],
 ];
 
@@ -118,10 +124,17 @@ function static_page(string $name, string $lang): string
     return '/' . $name . ($lang === 'zh' ? '-zh' : '') . '.html';
 }
 
-function list_url(string $lang, int $page = 1): string
+/** The message list, or one category of it when $category (a category's slug) is given. */
+function list_url(string $lang, int $page = 1, ?string $category = null): string
 {
-    $url = $lang === 'zh' ? '/messages-zh/' : '/messages/';
-    return $page > 1 ? $url . '?page=' . $page : $url;
+    $query = array_filter(['category' => $category, 'page' => $page > 1 ? $page : null], fn($value) => $value !== null);
+    return ($lang === 'zh' ? '/messages-zh/' : '/messages/') . ($query ? '?' . http_build_query($query) : '');
+}
+
+/** A category's name in a page language. */
+function category_name(array $category, string $lang): string
+{
+    return $category['name_' . ($lang === 'zh' ? 'zh' : 'en')];
 }
 
 /**
@@ -494,6 +507,24 @@ const ADMIN_TEXT = [
         'preview_title' => '預覽',
         'preview_notice' => '預覽：這是目前編輯中的內容，尚未儲存，訪客看不到。',
         'preview_empty' => '還沒有內容可以預覽。',
+        // Categories
+        'category' => '分類',
+        'category_none' => '（無）',
+        'manage_categories' => '管理分類',
+        'categories_title' => '分類',
+        'categories_intro' => '信息列表旁邊會顯示有已發佈信息的分類。網址中的分類代號建立後就不會改變，所以改名不會影響已分享的連結。',
+        'col_name_zh' => '中文名稱',
+        'col_name_en' => '英文名稱',
+        'col_count' => '信息數',
+        'add_category' => '新增分類',
+        'save' => '儲存',
+        'category_added' => '已新增分類。',
+        'category_saved' => '已儲存分類名稱。',
+        'category_deleted' => '已刪除分類。信息本身都保留著，只是不再屬於這個分類。',
+        'error_category_names' => '請填寫中文和英文名稱。',
+        'delete_category_question' => '確定要刪除分類「%s」嗎？',
+        'delete_category_warning' => '有 %d 篇信息在這個分類中。刪除後這些信息會保留，只是不再有分類。',
+        'no_categories' => '還沒有任何分類。',
     ],
     'en' => [
         'html_lang' => 'en',
@@ -617,6 +648,24 @@ const ADMIN_TEXT = [
         'preview_title' => 'Preview',
         'preview_notice' => "Preview: this is the text you're editing. It isn't saved, and visitors can't see it.",
         'preview_empty' => "There's nothing to preview yet.",
+        // Categories
+        'category' => 'Category',
+        'category_none' => '(None)',
+        'manage_categories' => 'Manage categories',
+        'categories_title' => 'Categories',
+        'categories_intro' => "The message list shows every category that has a published message. A category's web address never changes, so renaming it doesn't break shared links.",
+        'col_name_zh' => 'Chinese name',
+        'col_name_en' => 'English name',
+        'col_count' => 'Messages',
+        'add_category' => 'Add category',
+        'save' => 'Save',
+        'category_added' => 'Category added.',
+        'category_saved' => 'Category names saved.',
+        'category_deleted' => 'Category deleted. Its messages are all kept; they just have no category now.',
+        'error_category_names' => 'Please fill in both the Chinese and the English name.',
+        'delete_category_question' => 'Delete the category "%s"?',
+        'delete_category_warning' => '%d messages are in this category. They will be kept, just without a category.',
+        'no_categories' => 'No categories yet.',
     ],
 ];
 

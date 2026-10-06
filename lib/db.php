@@ -68,6 +68,34 @@ function db_migrate(PDO $pdo): void
             INSERT INTO message_revisions (message_id, title_en, body_en, title_zh, body_zh, status, published_at, saved_at)
               SELECT id, title_en, body_en, title_zh, body_zh, status, published_at, updated_at FROM messages;
             SQL,
+        // Categories (like Blogger's labels), shown as a sidebar on the message list.
+        3 => <<<'SQL'
+            CREATE TABLE categories (
+              id      INTEGER PRIMARY KEY,
+              slug    TEXT NOT NULL UNIQUE,  -- the ?category= in the list's address; never changes
+              name_en TEXT NOT NULL,
+              name_zh TEXT NOT NULL
+            );
+            ALTER TABLE messages ADD COLUMN category_id INTEGER REFERENCES categories (id) ON DELETE SET NULL;
+
+            -- The pastor's Blogger labels.
+            INSERT INTO categories (slug, name_en, name_zh) VALUES
+              ('marriage-and-family', 'Marriage & Family', '婚姻和家庭'),
+              ('church-history', 'Church History', '教會歷史'),
+              ('notes-of-bible-reading', 'The Notes of Bible Reading', '讀經隨筆'),
+              ('romans', 'Romans', '羅馬書');
+
+            -- The messages imported from Blogger, by their (date) slugs on cahob.org. Only fills in
+            -- messages without a category, and does nothing in databases without these messages.
+            UPDATE messages SET category_id = (SELECT id FROM categories WHERE slug = 'marriage-and-family')
+              WHERE category_id IS NULL AND slug IN ('2026-07-20', '2026-08-07', '2026-08-25', '2026-09-16', '2026-10-05');
+            UPDATE messages SET category_id = (SELECT id FROM categories WHERE slug = 'church-history')
+              WHERE category_id IS NULL AND slug IN ('2026-07-19', '2026-07-27', '2026-07-31', '2026-08-07-2', '2026-09-24', '2026-10-02');
+            UPDATE messages SET category_id = (SELECT id FROM categories WHERE slug = 'notes-of-bible-reading')
+              WHERE category_id IS NULL AND slug IN ('2026-09-28');
+            UPDATE messages SET category_id = (SELECT id FROM categories WHERE slug = 'romans')
+              WHERE category_id IS NULL AND slug IN ('2026-08-02', '2026-08-16', '2026-08-24');
+            SQL,
     ];
 
     $current = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -85,18 +113,26 @@ function db_migrate(PDO $pdo): void
 // ---------- Public pages: published messages only ----------
 // Deleted messages keep their status, so these queries also check deleted_at.
 
-function count_published(PDO $pdo): int
+/** Published messages, in one category if $categoryId is given. */
+function count_published(PDO $pdo, ?int $categoryId = null): int
 {
-    return (int) $pdo->query("SELECT COUNT(*) FROM messages WHERE status = 'published' AND deleted_at IS NULL")->fetchColumn();
+    $query = $pdo->prepare(
+        "SELECT COUNT(*) FROM messages WHERE status = 'published' AND deleted_at IS NULL
+         AND (:category IS NULL OR category_id = :category)"
+    );
+    $query->execute(['category' => $categoryId]);
+    return (int) $query->fetchColumn();
 }
 
-/** Published messages, newest first. */
-function published_messages(PDO $pdo, int $limit, int $offset): array
+/** Published messages, newest first, in one category if $categoryId is given. */
+function published_messages(PDO $pdo, int $limit, int $offset, ?int $categoryId = null): array
 {
     $query = $pdo->prepare(
         "SELECT * FROM messages WHERE status = 'published' AND deleted_at IS NULL
+         AND (:category IS NULL OR category_id = :category)
          ORDER BY published_at DESC, id DESC LIMIT :limit OFFSET :offset"
     );
+    $query->bindValue(':category', $categoryId, $categoryId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $query->bindValue(':limit', $limit, PDO::PARAM_INT);
     $query->bindValue(':offset', $offset, PDO::PARAM_INT);
     $query->execute();
@@ -186,6 +222,8 @@ function save_message(PDO $pdo, array $message, ?array $existing = null): int
         'status' => $message['status'],
         'published_at' => $message['published_at'],
         'was_published' => (int) (!empty($existing['was_published']) || $message['status'] === 'published'),
+        // Callers that don't deal with categories (e.g. the Blogger import) leave it as it was.
+        'category_id' => array_key_exists('category_id', $message) ? $message['category_id'] : ($existing['category_id'] ?? null),
     ];
 
     $outer = $pdo->inTransaction(); // the Blogger import saves all its messages in one transaction
@@ -194,15 +232,15 @@ function save_message(PDO $pdo, array $message, ?array $existing = null): int
     }
     if ($existing === null) {
         $pdo->prepare(
-            'INSERT INTO messages (slug, title_en, body_en, title_zh, body_zh, status, published_at, was_published)
-             VALUES (:slug, :title_en, :body_en, :title_zh, :body_zh, :status, :published_at, :was_published)'
+            'INSERT INTO messages (slug, title_en, body_en, title_zh, body_zh, status, published_at, was_published, category_id)
+             VALUES (:slug, :title_en, :body_en, :title_zh, :body_zh, :status, :published_at, :was_published, :category_id)'
         )->execute($values);
         $id = (int) $pdo->lastInsertId();
     } else {
         $pdo->prepare(
             'UPDATE messages SET slug = :slug, title_en = :title_en, body_en = :body_en, title_zh = :title_zh,
              body_zh = :body_zh, status = :status, published_at = :published_at, was_published = :was_published,
-             updated_at = CURRENT_TIMESTAMP
+             category_id = :category_id, updated_at = CURRENT_TIMESTAMP
              WHERE id = :id'
         )->execute($values + ['id' => $existing['id']]);
         $id = (int) $existing['id'];
@@ -260,4 +298,68 @@ function find_revision(PDO $pdo, int $messageId, int $revisionId): ?array
     $query = $pdo->prepare('SELECT * FROM message_revisions WHERE id = ? AND message_id = ?');
     $query->execute([$revisionId, $messageId]);
     return $query->fetch() ?: null;
+}
+
+// ---------- Categories ----------
+
+/** Every category, in name order (English names, so both languages list them the same way). */
+function all_categories(PDO $pdo): array
+{
+    return $pdo->query('SELECT * FROM categories ORDER BY name_en COLLATE NOCASE, id')->fetchAll();
+}
+
+function find_category(PDO $pdo, int $id): ?array
+{
+    $query = $pdo->prepare('SELECT * FROM categories WHERE id = ?');
+    $query->execute([$id]);
+    return $query->fetch() ?: null;
+}
+
+function find_category_by_slug(PDO $pdo, string $slug): ?array
+{
+    $query = $pdo->prepare('SELECT * FROM categories WHERE slug = ?');
+    $query->execute([$slug]);
+    return $query->fetch() ?: null;
+}
+
+/** Categories with at least one published message, each with its 'count', for the public sidebar. */
+function categories_with_counts(PDO $pdo): array
+{
+    return $pdo->query(
+        "SELECT c.*, COUNT(*) AS count FROM categories c
+         JOIN messages m ON m.category_id = c.id AND m.status = 'published' AND m.deleted_at IS NULL
+         GROUP BY c.id ORDER BY c.name_en COLLATE NOCASE, c.id"
+    )->fetchAll();
+}
+
+/** How many messages (drafts and deleted ones included) are in each category, by id. */
+function category_usage(PDO $pdo): array
+{
+    return $pdo->query('SELECT category_id, COUNT(*) FROM messages WHERE category_id IS NOT NULL GROUP BY category_id')
+        ->fetchAll(PDO::FETCH_KEY_PAIR);
+}
+
+/** Adds a category and returns its id. Its slug comes from the English name and never changes. */
+function add_category(PDO $pdo, string $nameEn, string $nameZh): int
+{
+    $base = slugify($nameEn) ?: 'category';
+    $slug = $base;
+    $taken = $pdo->prepare('SELECT 1 FROM categories WHERE slug = ?');
+    for ($n = 2; $taken->execute([$slug]) && $taken->fetchColumn() !== false; $n++) {
+        $slug = "$base-$n";
+    }
+    $pdo->prepare('INSERT INTO categories (slug, name_en, name_zh) VALUES (?, ?, ?)')->execute([$slug, $nameEn, $nameZh]);
+    return (int) $pdo->lastInsertId();
+}
+
+/** Renames a category. Its slug (and so its address) stays the same. */
+function rename_category(PDO $pdo, int $id, string $nameEn, string $nameZh): void
+{
+    $pdo->prepare('UPDATE categories SET name_en = ?, name_zh = ? WHERE id = ?')->execute([$nameEn, $nameZh, $id]);
+}
+
+/** Deletes a category; its messages are kept and just lose the category. */
+function delete_category(PDO $pdo, int $id): void
+{
+    $pdo->prepare('DELETE FROM categories WHERE id = ?')->execute([$id]);
 }

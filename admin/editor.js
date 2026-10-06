@@ -114,7 +114,7 @@
     remove(key) { try { localStorage.removeItem(key); } catch { /* blocked */ } },
   };
   const key = `cahob-message-${form.dataset.key}`;
-  const fields = ["published_at", "title_zh", "title_en"].map((id) => document.getElementById(id));
+  const fields = ["published_at", "category_id", "title_zh", "title_en"].map((id) => document.getElementById(id));
   const snapshot = () => {
     syncInputs();
     const data = {};

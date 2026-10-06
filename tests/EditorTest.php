@@ -172,6 +172,33 @@ final class EditorTest extends TestCase
         $this->assertNotNull(find_published($this->pdo, 'shared-link'));
     }
 
+    public function testCategoryIsSavedAndCanBeCleared(): void
+    {
+        $romans = (int) find_category_by_slug($this->pdo, 'romans')['id'];
+        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => (string) $romans]), 'publish')['id'];
+        $this->assertSame($romans, $this->row($id)['category_id']);
+
+        apply_editor_action($this->pdo, $this->row($id), $this->form(['body_en' => '<p>x</p>', 'category_id' => '']), 'update');
+        $this->assertNull($this->row($id)['category_id'], '"(None)" clears it.');
+    }
+
+    public function testUnknownCategoryIsIgnored(): void
+    {
+        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => '999']), 'draft')['id'];
+        $this->assertNull($this->row($id)['category_id']);
+        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => ['1']]), 'draft')['id'];
+        $this->assertNull($this->row($id)['category_id']);
+    }
+
+    public function testSavingWithoutACategoryFieldKeepsTheCategory(): void
+    {
+        $romans = (int) find_category_by_slug($this->pdo, 'romans')['id'];
+        $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>', 'category_id' => (string) $romans]), 'publish')['id'];
+        $message = $this->row($id);
+        save_message($this->pdo, ['title_en' => 'From the import', 'body_en' => '<p>x</p>', 'title_zh' => '', 'body_zh' => '', 'status' => 'published', 'published_at' => $message['published_at']], $message);
+        $this->assertSame($romans, $this->row($id)['category_id']);
+    }
+
     public function testUnpublishMakesItADraftAgain(): void
     {
         $id = apply_editor_action($this->pdo, null, $this->form(['body_en' => '<p>x</p>']), 'publish')['id'];

@@ -66,7 +66,10 @@ $values = [
     'body_zh' => $submitted['body_zh'] ?? $shown['body_zh'],
     'body_en' => $submitted['body_en'] ?? $shown['body_en'],
     'published_at' => $submitted['published_at_input'] ?? utc_to_local_input($shown['published_at'] ?? now_utc()),
+    // Versions don't keep a category, so loading an earlier version keeps the current one.
+    'category_id' => $submitted !== null ? $submitted['category_id'] : ($message['category_id'] ?? null),
 ];
+$categories = all_categories(db());
 $isPublished = $message['status'] === 'published';
 // An empty title is shown as the date, so the title boxes show that date until a title is typed.
 $dateUtc = local_to_utc($values['published_at']);
@@ -132,6 +135,16 @@ foreach ($errors as $error) {
         <div class="editor-meta">
           <label for="published_at"><?= at('publish_date') ?> <span class="field-hint">(<?= at('publish_date_hint') ?>)</span></label>
           <input type="datetime-local" id="published_at" name="published_at" value="<?= e($values['published_at']) ?>" required />
+        </div>
+        <div class="editor-meta">
+          <label for="category_id"><?= at('category') ?></label>
+          <select id="category_id" name="category_id">
+            <option value=""><?= at('category_none') ?></option>
+<?php foreach ($categories as $option): ?>
+            <option value="<?= (int) $option['id'] ?>"<?= (int) $option['id'] === $values['category_id'] ? ' selected' : '' ?>><?= e(category_name($option, admin_lang())) ?></option>
+<?php endforeach; ?>
+          </select>
+          <a href="/admin/categories.php" target="_blank" rel="noopener" class="admin-text-link"><?= at('manage_categories') ?><span class="visually-hidden"> <?= at('new_tab') ?></span></a>
         </div>
 
         <div class="editor-columns">

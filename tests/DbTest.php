@@ -23,15 +23,15 @@ final class DbTest extends TestCase
 
     public function testFirstRunCreatesTheTables(): void
     {
-        $this->assertSame(['login_attempts', 'message_revisions', 'messages'], $this->tables());
-        $this->assertSame(2, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
+        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages'], $this->tables());
+        $this->assertSame(3, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
     }
 
     public function testMigratingAgainChangesNothing(): void
     {
         $this->pdo->exec("INSERT INTO messages (slug, title_en) VALUES ('kept', 'Kept')");
         db_migrate($this->pdo);
-        $this->assertSame(['login_attempts', 'message_revisions', 'messages'], $this->tables());
+        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages'], $this->tables());
         $this->assertSame('Kept', $this->pdo->query("SELECT title_en FROM messages WHERE slug = 'kept'")->fetchColumn());
     }
 
@@ -65,6 +65,34 @@ final class DbTest extends TestCase
         $this->assertSame('published', $history[0]['status']);
         $this->assertSame('2026-09-29 03:00:00', $history[0]['saved_at'], 'Dated when the message was last saved.');
         $this->assertCount(1, message_revisions($old, 2));
+        $this->assertSame('notes-of-bible-reading', find_category($old, (int) $old->query('SELECT category_id FROM messages WHERE id = 1')->fetchColumn())['slug'], 'The imported 2026-09-28 message gets its Blogger label.');
+        $this->assertNull($old->query('SELECT category_id FROM messages WHERE id = 2')->fetchColumn());
+    }
+
+    public function testCategoriesStartWithTheBloggerLabels(): void
+    {
+        $names = array_map(fn(array $c): string => $c['name_zh'] . ' / ' . $c['name_en'], all_categories($this->pdo));
+        $this->assertSame(['教會歷史 / Church History', '婚姻和家庭 / Marriage & Family', '羅馬書 / Romans', '讀經隨筆 / The Notes of Bible Reading'], $names);
+    }
+
+    public function testDeletingACategoryKeepsItsMessages(): void
+    {
+        $category = find_category_by_slug($this->pdo, 'romans');
+        $this->pdo->exec("INSERT INTO messages (slug, category_id) VALUES ('kept', {$category['id']})");
+        delete_category($this->pdo, (int) $category['id']);
+        $this->assertNull(find_category_by_slug($this->pdo, 'romans'));
+        $this->assertNull($this->pdo->query("SELECT category_id FROM messages WHERE slug = 'kept'")->fetchColumn(), 'The message stays, without a category.');
+    }
+
+    public function testNewCategoriesGetAFixedSlugFromTheEnglishName(): void
+    {
+        $first = add_category($this->pdo, 'Hebrews', '希伯來書');
+        $second = add_category($this->pdo, 'Hebrews!', '希伯來書二');
+        $this->assertSame('hebrews', find_category($this->pdo, $first)['slug']);
+        $this->assertSame('hebrews-2', find_category($this->pdo, $second)['slug']);
+        rename_category($this->pdo, $first, 'The Book of Hebrews', '希伯來書');
+        $this->assertSame('hebrews', find_category($this->pdo, $first)['slug'], 'Renaming keeps the address.');
+        $this->assertSame('The Book of Hebrews', find_category($this->pdo, $first)['name_en']);
     }
 
     public function testNewMessageDefaultsToAnEmptyDraft(): void

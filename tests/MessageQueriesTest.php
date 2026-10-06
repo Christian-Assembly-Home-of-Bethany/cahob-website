@@ -24,6 +24,22 @@ final class MessageQueriesTest extends TestCase
         return array_column($rows, 'slug');
     }
 
+    public function testCategoryFilterAndSidebarCounts(): void
+    {
+        $romans = (int) find_category_by_slug($this->pdo, 'romans')['id'];
+        $history = (int) find_category_by_slug($this->pdo, 'church-history')['id'];
+        $this->pdo->exec("UPDATE messages SET category_id = $romans WHERE slug IN ('oldest', 'newest', 'draft')");
+        $this->pdo->exec("UPDATE messages SET category_id = $history, deleted_at = CURRENT_TIMESTAMP WHERE slug = 'middle'");
+
+        $this->assertSame(2, count_published($this->pdo, $romans));
+        $this->assertSame(['newest', 'oldest'], $this->slugs(published_messages($this->pdo, 10, 0, $romans)));
+        $this->assertSame([], published_messages($this->pdo, 10, 0, $history), 'Deleted messages stay hidden.');
+        $this->assertSame(2, count_published($this->pdo), 'No category: every published message.');
+
+        $sidebar = array_map(fn(array $c): string => $c['slug'] . ' ' . $c['count'], categories_with_counts($this->pdo));
+        $this->assertSame(['romans 2'], $sidebar, 'Only categories with published messages, counting neither drafts nor deleted ones.');
+    }
+
     public function testOnlyPublishedMessagesAreCounted(): void
     {
         $this->assertSame(3, count_published($this->pdo));

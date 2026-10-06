@@ -28,6 +28,7 @@ $contentLang = t($section['lang'], 'html_lang');
 // An untitled message's heading is its date, written in the page's language.
 $headingLang = $section['title'] !== '' ? $section['lang'] : $lang;
 $otherVersion = other_lang($section['lang']);
+$category = $message['category_id'] !== null ? find_category(db(), (int) $message['category_id']) : null;
 // The browser names a saved PDF after the page title, so Download PDF sets this title first.
 $pdfName = 'CAHOB ' . iso_date($message['published_at']) . ($section['title'] !== '' ? ' ' . $section['title'] : '');
 
@@ -38,7 +39,7 @@ page_header(
     message_url($message, other_lang($lang)),
 );
 page_hero(
-    t($lang, 'messages'),
+    $category !== null ? category_name($category, $lang) : t($lang, 'messages'),
     $heading,
     $section['title'] !== '' ? format_date($message['published_at'], $lang) : '',
     'hero--message',
@@ -72,6 +73,9 @@ page_hero(
 
         <nav class="content-narrow message-nav" aria-label="<?= t($lang, 'messages') ?>">
           <a href="<?= list_url($lang) ?>" class="explore-link"><span aria-hidden="true">&larr;</span> <?= t($lang, 'all') ?></a>
+<?php if ($category !== null): ?>
+          <a href="<?= e(list_url($lang, 1, $category['slug'])) ?>" class="explore-link"><?= e(sprintf(t($lang, 'more_in'), category_name($category, $lang))) ?></a>
+<?php endif; ?>
 <?php if (has_both_languages($message)): ?>
           <a href="<?= e(message_url($message, $lang, $otherVersion)) ?>" class="explore-link" lang="<?= t($otherVersion, 'html_lang') ?>"><?= t($otherVersion, 'version_name') ?> <span aria-hidden="true">&rarr;</span></a>
 <?php endif; ?>

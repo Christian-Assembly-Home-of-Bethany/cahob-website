@@ -132,6 +132,59 @@ final class AdminPagesTest extends TestCase
         $this->assertMatchesRegularExpression('#id="title_en" name="title_en" value="" placeholder="October 5, 2026"#', $html);
     }
 
+    public function testEditorPicksTheMessagesCategory(): void
+    {
+        $romans = (int) find_category_by_slug(db(), 'romans')['id'];
+        $id = $this->add(['body_en' => '<p>Body</p>', 'category_id' => $romans]);
+        $html = $this->render('edit.php', ['id' => (string) $id]);
+
+        $this->assertStringContainsString('<select id="category_id" name="category_id">', $html);
+        $this->assertStringContainsString('<option value="">（無）</option>', $html);
+        $this->assertStringContainsString('<option value="' . $romans . '" selected>羅馬書</option>', $html);
+        $this->assertSame(1, substr_count($html, ' selected>'), 'Only one category is selected (the version list selects nothing yet).');
+    }
+
+    public function testCategoriesPageListsAndCountsThem(): void
+    {
+        $romans = (int) find_category_by_slug(db(), 'romans')['id'];
+        $this->add(['body_en' => '<p>a</p>', 'category_id' => $romans]);
+        $this->add(['body_en' => '<p>b</p>', 'category_id' => $romans, 'status' => 'draft']);
+        $html = $this->render('categories.php');
+
+        $this->assertStringContainsString('<h1>分類</h1>', $html);
+        $this->assertStringContainsString('name="name_zh" value="羅馬書"', $html);
+        $this->assertStringContainsString('name="name_en" value="Romans"', $html);
+        $this->assertStringContainsString('信息數: 2', $html, 'Drafts count too: deleting the category affects them.');
+        $this->assertStringContainsString('href="/admin/categories.php?delete=' . $romans . '"', $html);
+    }
+
+    public function testAddingACategoryNeedsBothNames(): void
+    {
+        $html = $this->render('categories.php', [], ['csrf' => 'test-token', 'action' => 'add', 'name_zh' => '希伯來書', 'name_en' => ' ']);
+        $this->assertStringContainsString('請填寫中文和英文名稱。', $html);
+        $this->assertStringContainsString('name="name_zh" value="希伯來書"', $html, 'What was typed stays in the form.');
+        $this->assertCount(4, all_categories(db()));
+    }
+
+    public function testCategoryFormsNeedTheToken(): void
+    {
+        $html = $this->render('categories.php', [], ['csrf' => 'old', 'action' => 'add', 'name_zh' => '希伯來書', 'name_en' => 'Hebrews']);
+        $this->assertStringContainsString('頁面已過期', $html);
+        $this->assertCount(4, all_categories(db()));
+    }
+
+    public function testDeletingACategoryAsksFirst(): void
+    {
+        $romans = (int) find_category_by_slug(db(), 'romans')['id'];
+        $this->add(['body_en' => '<p>a</p>', 'category_id' => $romans]);
+        $html = $this->render('categories.php', ['delete' => (string) $romans]);
+
+        $this->assertStringContainsString('確定要刪除分類「羅馬書」嗎？', $html);
+        $this->assertStringContainsString('有 1 篇信息在這個分類中', $html);
+        $this->assertStringContainsString('<input type="hidden" name="action" value="delete" />', $html);
+        $this->assertNotNull(find_category(db(), $romans), 'Nothing is deleted until the form is sent.');
+    }
+
     public function testQuillIsPinnedAndIntegrityChecked(): void
     {
         $html = $this->render('edit.php');
@@ -250,7 +303,7 @@ final class AdminPagesTest extends TestCase
         $id = $this->add(['body_en' => '<p>x</p>']);
         $html = $this->render('edit.php', ['id' => (string) $id]);
         $this->assertStringContainsString('目前只有這一個版本', $html);
-        $this->assertStringNotContainsString('<select', $html);
+        $this->assertStringNotContainsString('<select id="revision"', $html);
     }
 
     public function testLoadingAnEarlierVersionFillsTheFormWithoutSaving(): void

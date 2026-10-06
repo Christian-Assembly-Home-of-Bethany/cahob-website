@@ -55,6 +55,7 @@ function message_from_form(array $post): array
         'body_zh' => sanitize_html($text('body_zh')),
         'published_at_input' => $text('published_at'),
         'published_at' => local_to_utc($text('published_at')),
+        'category_id' => ctype_digit($text('category_id')) ? (int) $text('category_id') : null,
     ];
 }
 
@@ -82,6 +83,9 @@ function message_errors(array $message, string $action): array
 function apply_editor_action(PDO $pdo, ?array $existing, array $post, string $action): array
 {
     $message = message_from_form($post);
+    if ($message['category_id'] !== null && find_category($pdo, $message['category_id']) === null) {
+        $message['category_id'] = null; // deleted in another tab, or a made-up id
+    }
     $errors = message_errors($message, $action);
     if ($errors) {
         return ['errors' => $errors, 'message' => $message + ['status' => $existing['status'] ?? 'draft']];
