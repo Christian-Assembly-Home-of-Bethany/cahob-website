@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 9;
+const STYLES_VERSION = 10;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
