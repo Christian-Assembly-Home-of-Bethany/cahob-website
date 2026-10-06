@@ -28,6 +28,8 @@ $contentLang = t($section['lang'], 'html_lang');
 // An untitled message's heading is its date, written in the page's language.
 $headingLang = $section['title'] !== '' ? $section['lang'] : $lang;
 $otherVersion = other_lang($section['lang']);
+// The browser names a saved PDF after the page title, so Download PDF sets this title first.
+$pdfName = 'CAHOB ' . iso_date($message['published_at']) . ($section['title'] !== '' ? ' ' . $section['title'] : '');
 
 page_header(
     $lang,
@@ -43,16 +45,20 @@ page_hero(
     $headingLang !== $lang ? t($headingLang, 'html_lang') : '',
 );
 ?>
-<?php if (has_both_languages($message)): ?>
 
     <div class="container message-switch">
+      <div class="message-actions" role="group" aria-label="<?= t($lang, 'actions_label') ?>" hidden>
+        <button type="button" class="btn btn-ghost" data-print><?= t($lang, 'print') ?></button>
+        <button type="button" class="btn btn-ghost" data-print data-filename="<?= e($pdfName) ?>" title="<?= e(t($lang, 'download_hint')) ?>"><?= t($lang, 'download_pdf') ?></button>
+      </div>
+<?php if (has_both_languages($message)): ?>
       <nav class="lang-toggle" aria-label="<?= t($lang, 'version_label') ?>">
 <?php foreach (['zh', 'en'] as $code): ?>
         <a href="<?= e(message_url($message, $lang, $code)) ?>" class="btn btn-ghost" lang="<?= t($code, 'html_lang') ?>"<?= $code === $section['lang'] ? ' aria-current="page"' : '' ?>><?= t($code, 'version_name') ?></a>
 <?php endforeach; ?>
       </nav>
-    </div>
 <?php endif; ?>
+    </div>
 
     <section class="section" aria-label="<?= e($heading) ?>">
       <div class="container">
