@@ -15,4 +15,8 @@ return [
 
     // Show error details on the page. Only ever true on a local machine.
     'debug' => false,
+
+    // Optional: where Sync from Blogger reads posts from (a feed URL or a saved feed file).
+    // Leave it out to use the pastor's blog.
+    // 'blogger_feed' => 'https://johannavoice.blogspot.com/feeds/posts/default?max-results=500',
 ];

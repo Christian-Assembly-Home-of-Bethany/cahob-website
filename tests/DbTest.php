@@ -23,15 +23,15 @@ final class DbTest extends TestCase
 
     public function testFirstRunCreatesTheTables(): void
     {
-        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], $this->tables());
-        $this->assertSame(5, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
+        $this->assertSame(['blogger_posts', 'categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], $this->tables());
+        $this->assertSame(6, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
     }
 
     public function testMigratingAgainChangesNothing(): void
     {
         $this->pdo->exec("INSERT INTO messages (slug, title_en) VALUES ('kept', 'Kept')");
         db_migrate($this->pdo);
-        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], $this->tables());
+        $this->assertSame(['blogger_posts', 'categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], $this->tables());
         $this->assertSame('Kept', $this->pdo->query("SELECT title_en FROM messages WHERE slug = 'kept'")->fetchColumn());
     }
 
@@ -83,7 +83,7 @@ final class DbTest extends TestCase
         $this->pdo->exec("UPDATE messages SET slug = '2026-09-28' WHERE id = $untitled");
         $typed = $save('x', 'Typed by the pastor');
         $this->pdo->exec("UPDATE messages SET slug = '2026-10-02' WHERE id = $typed");
-        $this->pdo->exec('DROP TABLE slug_redirects; PRAGMA user_version = 3');
+        $this->pdo->exec('DROP TABLE blogger_posts; DROP TABLE slug_redirects; PRAGMA user_version = 3');
 
         db_migrate($this->pdo);
 
@@ -109,7 +109,7 @@ final class DbTest extends TestCase
         $named = $save('Already Named', '2026-08-08T19:00:00Z');
         $this->pdo->exec("UPDATE messages SET title_en = 'Same Title' WHERE id IN ($first, $second)");
         $this->pdo->exec("UPDATE messages SET title_zh = '只有中文' WHERE id = $chinese");
-        $this->pdo->exec('DROP TABLE slug_redirects; PRAGMA user_version = 4');
+        $this->pdo->exec('DROP TABLE blogger_posts; DROP TABLE slug_redirects; PRAGMA user_version = 4');
         $this->assertSame(['2026-07-20', '2026-08-07', '2026-08-07-2', 'already-named'], array_column($this->pdo->query('SELECT slug FROM messages ORDER BY id')->fetchAll(), 'slug'));
 
         db_migrate($this->pdo);

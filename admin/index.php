@@ -25,6 +25,7 @@ admin_header(at('messages_title'), $admin);
         <div class="admin-heading-actions">
           <a href="<?= list_url($publicLang) ?>" class="admin-text-link" target="_blank" rel="noopener"><?= at('view_messages') ?><span class="visually-hidden"> <?= at('new_tab') ?></span></a>
           <a href="<?= admin_url('categories') ?>" class="admin-text-link"><?= at('manage_categories') ?></a>
+          <a href="<?= admin_url('sync') ?>" class="btn btn-ghost admin-btn"><?= at('sync_button') ?></a>
           <a href="<?= admin_url('edit') ?>" class="btn btn-primary admin-btn">＋ <?= at('new_message') ?></a>
         </div>
       </div>

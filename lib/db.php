@@ -159,6 +159,18 @@ function db_migrate(PDO $pdo): void
                 $pdo->prepare('UPDATE messages SET slug = ? WHERE id = ?')->execute([unique_slug($pdo, $base, (int) $message['id']), $message['id']]);
             }
         },
+        // Sync from Blogger: which Blogger post fills which language of which message.
+        6 => <<<'SQL'
+            CREATE TABLE blogger_posts (
+              blogger_id      TEXT PRIMARY KEY,
+              message_id      INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE,
+              lang            TEXT NOT NULL CHECK (lang IN ('en', 'zh')),
+              url             TEXT NOT NULL DEFAULT '',
+              blogger_updated TEXT NOT NULL,  -- the post's "updated" time when it was last synced
+              synced_hash     TEXT NOT NULL   -- sha1 of the text as Blogger had it then, to spot edits made on the website
+            );
+            CREATE UNIQUE INDEX idx_blogger_posts_message ON blogger_posts (message_id, lang);
+            SQL,
     ];
 
     $current = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
