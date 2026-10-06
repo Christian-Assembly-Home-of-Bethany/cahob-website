@@ -96,8 +96,8 @@ The security features it needs are well understood (see "Security" below).
 │   ├── render.php        navbar/footer/hero for PHP pages, admin layout, all UI text (en/zh)
 │   ├── editor.php        editor form handling (kept out of the page so it can be tested)
 │   ├── sanitize.php      HTML Purifier allowlist
-│   ├── config.example.php    template for the server's config.php
-│   ├── tools/hash_password.php   makes the password hash for config.php
+│   ├── config.example.php    template for the server's config.php (not deployed)
+│   ├── tools/hash_password.php   makes the password hash for config.php (local only, not deployed)
 │   └── vendor/htmlpurifier/   vendored HTML sanitizer (v4.19.1)
 
 (repo only, never deployed: tests/, composer.json, composer.lock, phpunit.xml, and the local
@@ -324,9 +324,10 @@ Bash, from the repo folder; the rest is in cPanel.
    characters; a few words works well), and copy the printed line that starts with `$2y$10$`.
 2. **Create `config.php`.** In cPanel → **File Manager**, open your home folder (the one that
    contains `public_html`), then `cahob-data`. Click **+ File**, name it `config.php`, click
-   **Edit**, and paste in the contents of `lib/config.example.php`. Put the hash between the
-   quotes after `'password_hash' =>`. Keep `'username' => 'pastor'` (or choose another and tell
-   the pastor) and `'debug' => false`. Save.
+   **Edit**, and paste in the contents of `lib/config.example.php` from your local checkout
+   (or from the repo on GitHub; it isn't deployed, so it's not in `public_html`). Put the
+   hash between the quotes after `'password_hash' =>`. Keep `'username' => 'pastor'` (or
+   choose another and tell the pastor) and `'debug' => false`. Save.
 3. **Import the Blogger posts.** Locally, run
    `php lib/tools/import_blogger.php --db=dev-data/live-import.sqlite`. Do it right before
    uploading, so it includes the newest Blogger posts. Check the list it prints.

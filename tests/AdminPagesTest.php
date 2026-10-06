@@ -123,6 +123,15 @@ final class AdminPagesTest extends TestCase
         $this->assertLessThan(strpos($html, 'id="title_en"'), strpos($html, 'id="title_zh"'), 'Chinese comes first.');
     }
 
+    public function testEmptyTitlesShowTheDateTheyDefaultTo(): void
+    {
+        $id = $this->add(['body_en' => '<p>Body</p>', 'published_at' => '2026-10-06T03:30:00Z']); // Oct 5, 8:30 pm Pacific
+        $html = $this->render('edit.php', ['id' => (string) $id]);
+
+        $this->assertMatchesRegularExpression('#id="title_zh" name="title_zh" value="" placeholder="2026年10月5日"#', $html);
+        $this->assertMatchesRegularExpression('#id="title_en" name="title_en" value="" placeholder="October 5, 2026"#', $html);
+    }
+
     public function testQuillIsPinnedAndIntegrityChecked(): void
     {
         $html = $this->render('edit.php');
