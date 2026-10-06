@@ -360,6 +360,20 @@ a {
   flex-wrap: wrap;
 }
 
+/* The home page's four buttons: one row when there's room, otherwise two rows of two (never
+   three and one left alone), and one per row on a phone (see the 720px rule) */
+.hero-content:has(.hero-buttons) {
+  max-width: 900px;
+}
+
+@media (max-width: 920px) {
+  .hero-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    justify-content: center;
+  }
+}
+
 .hero-content > :nth-child(1) { animation-delay: 0.2s; }
 .hero-content > :nth-child(2) { animation-delay: 0.4s; }
 .hero-content > :nth-child(3) { animation-delay: 0.6s; }
@@ -867,6 +881,10 @@ a {
 
   .hero {
     min-height: 92vh;
+  }
+
+  .hero-buttons {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .hero-buttons .btn {
