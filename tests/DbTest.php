@@ -24,7 +24,7 @@ final class DbTest extends TestCase
     public function testFirstRunCreatesTheTables(): void
     {
         $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages'], $this->tables());
-        $this->assertSame(3, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
+        $this->assertSame(4, (int) $this->pdo->query('PRAGMA user_version')->fetchColumn());
     }
 
     public function testMigratingAgainChangesNothing(): void
@@ -60,13 +60,42 @@ final class DbTest extends TestCase
         $rows = $old->query('SELECT id, was_published, deleted_at FROM messages ORDER BY id')->fetchAll();
         $this->assertSame([['id' => 1, 'was_published' => 1, 'deleted_at' => null], ['id' => 2, 'was_published' => 0, 'deleted_at' => null]], $rows);
         $history = message_revisions($old, 1);
-        $this->assertCount(1, $history);
-        $this->assertSame('<p>舊信息</p>', $history[0]['body_zh']);
-        $this->assertSame('published', $history[0]['status']);
-        $this->assertSame('2026-09-29 03:00:00', $history[0]['saved_at'], 'Dated when the message was last saved.');
+        $this->assertCount(2, $history, 'Its first version, then the Blogger title from version 4.');
+        $first = $history[1];
+        $this->assertSame('<p>舊信息</p>', $first['body_zh']);
+        $this->assertSame('', $first['title_zh']);
+        $this->assertSame('published', $first['status']);
+        $this->assertSame('2026-09-29 03:00:00', $first['saved_at'], 'Dated when the message was last saved.');
+        $this->assertSame('兩個「免得」與一個「持守」', $history[0]['title_zh']);
         $this->assertCount(1, message_revisions($old, 2));
         $this->assertSame('notes-of-bible-reading', find_category($old, (int) $old->query('SELECT category_id FROM messages WHERE id = 1')->fetchColumn())['slug'], 'The imported 2026-09-28 message gets its Blogger label.');
         $this->assertNull($old->query('SELECT category_id FROM messages WHERE id = 2')->fetchColumn());
+    }
+
+    public function testImportedMessagesGetTheirBloggerTitlesOnce(): void
+    {
+        // The live database before version 4: imported messages have date slugs and no titles.
+        $save = fn(string $slug, string $titleEn = ''): int => save_message($this->pdo, [
+            'title_en' => $titleEn, 'title_zh' => '', 'body_en' => '<p>Text</p>', 'body_zh' => '<p>內容</p>',
+            'status' => 'published', 'published_at' => '2026-09-28T23:44:00Z',
+        ]);
+        $untitled = $save('2026-09-28');
+        $this->pdo->exec("UPDATE messages SET slug = '2026-09-28' WHERE id = $untitled");
+        $typed = $save('x', 'Typed by the pastor');
+        $this->pdo->exec("UPDATE messages SET slug = '2026-10-02' WHERE id = $typed");
+        $this->pdo->exec('PRAGMA user_version = 3');
+
+        db_migrate($this->pdo);
+
+        $row = find_message($this->pdo, $untitled);
+        $this->assertSame('Two “Lests” and One “Holding Fast”', $row['title_en']);
+        $this->assertSame('兩個「免得」與一個「持守」', $row['title_zh']);
+        $this->assertSame('2026-09-28', $row['slug'], 'The link stays the same.');
+        $this->assertCount(2, message_revisions($this->pdo, $untitled), 'A new version, so the untitled one can be restored.');
+
+        $row = find_message($this->pdo, $typed);
+        $this->assertSame('Typed by the pastor', $row['title_en'], 'A title the pastor typed is kept.');
+        $this->assertSame('世代信仰形成的屬靈原則', $row['title_zh'], 'The empty one is filled.');
     }
 
     public function testCategoriesStartWithTheBloggerLabels(): void
