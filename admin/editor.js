@@ -173,7 +173,7 @@
   setInterval(async () => {
     if (Date.now() - lastTyped > 10 * 60 * 1000) return; // only while actively writing
     try {
-      const response = await fetch("/admin/ping.php", { credentials: "same-origin", cache: "no-store" });
+      const response = await fetch("/admin/ping", { credentials: "same-origin", cache: "no-store" });
       if (response.status === 401) document.getElementById("session-lost").hidden = false;
     } catch { /* offline for a moment; try again next time */ }
   }, 5 * 60 * 1000);

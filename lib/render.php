@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 12;
+const STYLES_VERSION = 13;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -708,7 +708,7 @@ function security_details(string $details): string
 function admin_header(string $title, ?string $admin = null, string $head = ''): void
 {
     $other = admin_lang() === 'zh' ? 'en' : 'zh';
-    $switchUrl = '/admin/language.php?to=' . $other . '&back=' . rawurlencode((string) ($_SERVER['REQUEST_URI'] ?? '/admin/'));
+    $switchUrl = admin_url('language', ['to' => $other, 'back' => (string) ($_SERVER['REQUEST_URI'] ?? '/admin/')]);
     ?>
 <!DOCTYPE html>
 <html lang="<?= at('html_lang') ?>">
@@ -728,12 +728,12 @@ function admin_header(string $title, ?string $admin = null, string $head = ''): 
   <body class="admin-page messages-page">
     <header class="admin-bar">
       <div class="admin-bar-inner">
-        <a href="/admin/" class="admin-brand"><strong>CAHOB</strong> <span><?= at('brand') ?></span></a>
+        <a href="<?= static_page('index', admin_lang()) ?>" class="admin-brand"><strong>CAHOB</strong> <span><?= at('brand') ?></span></a>
         <div class="admin-user">
           <a href="<?= e($switchUrl) ?>" class="admin-lang" lang="<?= at('switch_lang') ?>" aria-label="<?= at('switch_aria') ?>"><?= at('switch_to') ?></a>
 <?php if ($admin !== null): ?>
           <span class="admin-name"><?= e($admin) ?></span>
-          <form method="post" action="/admin/logout.php">
+          <form method="post" action="<?= admin_url('logout') ?>">
             <?= csrf_field() ?>
             <button type="submit" class="admin-link-button"><?= at('log_out') ?></button>
           </form>

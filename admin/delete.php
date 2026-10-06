@@ -34,7 +34,7 @@ admin_header(at('delete_title'), $admin);
           <span><?= format_date($date, admin_lang()) ?> · <?= at($message['status'] === 'published' ? 'status_published' : 'status_draft') ?></span>
         </p>
         <p class="admin-intro"><?= at('delete_warning') ?></p>
-        <form method="post" action="/admin/delete.php?id=<?= $id ?>" class="confirm-actions">
+        <form method="post" action="<?= e(admin_url('delete', ['id' => $id])) ?>" class="confirm-actions">
           <?= csrf_field() ?>
           <button type="submit" class="btn admin-btn btn-danger"><?= at('delete_confirm') ?></button>
           <a href="/admin/" class="btn btn-ghost admin-btn"><?= at('cancel') ?></a>

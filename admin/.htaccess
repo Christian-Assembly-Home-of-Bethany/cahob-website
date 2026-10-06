@@ -2,3 +2,9 @@
 RewriteEngine On
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Clean addresses: /admin/edit runs edit.php, and ?id=... passes through. Old .php links are sent
+# here by the pages themselves (redirect_old_admin_url() in lib/auth.php).
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([a-z]+)$ $1.php [L]

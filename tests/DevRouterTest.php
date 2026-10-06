@@ -50,6 +50,9 @@ final class DevRouterTest extends TestCase
             ['/messages-zh/?page=2'],
             ['/messages/index.php'],
             ['/messages/Not_A_Slug'],
+            ['/admin/'],
+            ['/admin/edit.php'],
+            ['/admin/no-such-page'],
         ];
     }
 
@@ -77,6 +80,25 @@ final class DevRouterTest extends TestCase
         $this->assertSame($slug, $_GET['slug']);
         $this->assertSame(404, http_response_code(), 'The page ran and found no such message.');
         $this->assertStringContainsString(str_contains($uri, '-zh') ? '找不到這篇信息' : 'Message not found', $html);
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testMapsAdminLinksLikeTheHtaccessFile(): void
+    {
+        $dir = sys_get_temp_dir() . '/cahob-router-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        file_put_contents($dir . '/config.php', "<?php return ['db_path' => __DIR__ . '/messages.sqlite'];");
+        putenv('CAHOB_CONFIG=' . $dir . '/config.php');
+
+        $_SERVER['REQUEST_URI'] = '/admin/ping';
+        ob_start();
+        $handled = require __DIR__ . '/../lib/tools/dev_router.php';
+        $out = ob_get_clean();
+
+        $this->assertTrue($handled);
+        $this->assertSame(401, http_response_code(), 'ping.php ran and found no login.');
+        $this->assertSame('{"signedIn":false}', $out);
     }
 
     /** Without QSA the live server drops ?version=... when it rewrites /messages/<slug>. The local router keeps it either way. */

@@ -146,10 +146,28 @@ final class AuthTest extends TestCase
 
     public function testLanguageSwitchOnlyReturnsToAdminPages(): void
     {
-        $this->assertSame('/admin/login.php?expired=1', safe_admin_path('/admin/login.php?expired=1'));
+        $this->assertSame('/admin/login?expired=1', safe_admin_path('/admin/login?expired=1'));
         $this->assertSame('/admin/', safe_admin_path('/admin/'));
         foreach (['https://evil.example/', '//evil.example/admin/', '/messages.php', '/admin/../index.html', "/admin/\r\nSet-Cookie: x", '/admin\\..\\x', null, ['x']] as $bad) {
             $this->assertSame('/admin/', safe_admin_path($bad), var_export($bad, true));
+        }
+    }
+
+    public function testAdminUrlsHaveNoPhp(): void
+    {
+        $this->assertSame('/admin/', admin_url('index'));
+        $this->assertSame('/admin/edit', admin_url('edit'));
+        $this->assertSame('/admin/edit?id=5', admin_url('edit', ['id' => 5]));
+        $this->assertSame('/admin/login?expired=1&next=%2Fadmin%2Fedit%3Fid%3D5', admin_url('login', ['expired' => '1', 'next' => '/admin/edit?id=5']));
+    }
+
+    public function testOldAdminAddressesPointToTheCleanOnes(): void
+    {
+        $this->assertSame('/admin/', old_admin_url('/admin/index.php', ''));
+        $this->assertSame('/admin/login', old_admin_url('/admin/login.php', ''));
+        $this->assertSame('/admin/edit?id=5&notice=saved', old_admin_url('/admin/edit.php', 'id=5&notice=saved'));
+        foreach (['/admin/', '/admin/edit', '/messages.php', '/admin/sub/edit.php', '/admin/edit.php/x'] as $path) {
+            $this->assertNull(old_admin_url($path, ''), $path);
         }
     }
 

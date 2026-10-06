@@ -74,12 +74,35 @@ final class LoginPageTest extends TestCase
 
     public function testAdminPagesAreChineseByDefaultWithAnEnglishButton(): void
     {
-        $_SERVER['REQUEST_URI'] = '/admin/login.php?expired=1';
+        $_SERVER['REQUEST_URI'] = '/admin/login?expired=1';
         $html = $this->render();
         $this->assertStringContainsString('<html lang="zh-Hant">', $html);
         $this->assertStringContainsString('<label for="username">用戶名</label>', $html);
-        $this->assertStringContainsString('href="/admin/language.php?to=en&amp;back=%2Fadmin%2Flogin.php%3Fexpired%3D1" class="admin-lang" lang="en"', $html);
+        $this->assertStringContainsString('href="/admin/language?to=en&amp;back=%2Fadmin%2Flogin%3Fexpired%3D1" class="admin-lang" lang="en"', $html);
         $this->assertStringContainsString('>English</a>', $html);
+    }
+
+    public function testFormPostsToTheCleanAddress(): void
+    {
+        $this->assertStringContainsString('<form method="post" action="/admin/login" class="admin-form">', $this->render());
+    }
+
+    public function testLoginPostedToTheOldAddressStillWorks(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/admin/login.php';
+        $html = $this->post(['username' => 'pastor', 'password' => 'wrong']);
+        $this->assertStringContainsString('錯誤：密碼或用戶名不正確', $html, 'A form post is not redirected, so it is still answered.');
+    }
+
+    public function testLogoGoesToTheWebsiteHomePage(): void
+    {
+        $this->assertStringContainsString('<a href="/index-zh.html" class="admin-brand">', $this->render());
+    }
+
+    public function testLogoGoesToTheEnglishHomePageInEnglish(): void
+    {
+        $_COOKIE['cahob_admin_lang'] = 'en';
+        $this->assertStringContainsString('<a href="/" class="admin-brand">', $this->render());
     }
 
     public function testEnglishButtonTurnsEverythingEnglish(): void

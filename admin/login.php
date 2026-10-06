@@ -62,7 +62,7 @@ admin_header(at('login_title'));
 <?php if ($alert !== null) {
     admin_alert(...$alert);
 } ?>
-        <form method="post" action="/admin/login.php" class="admin-form">
+        <form method="post" action="<?= admin_url('login') ?>" class="admin-form">
           <?= csrf_field() ?>
           <input type="hidden" name="next" value="<?= e($next) ?>" />
           <label for="username"><?= at('username') ?></label>

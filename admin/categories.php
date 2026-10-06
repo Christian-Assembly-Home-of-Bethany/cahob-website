@@ -27,16 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'stale_form';
     } elseif ($action === 'delete' && $category !== null) {
         delete_category($pdo, (int) $category['id']);
-        redirect('/admin/categories.php?notice=category_deleted');
+        redirect(admin_url('categories', ['notice' => 'category_deleted']));
     } elseif (in_array($action, ['add', 'rename'], true) && ($names['name_zh'] === '' || $names['name_en'] === '')) {
         $error = 'error_category_names';
         $typed = $action === 'add' ? $names : $typed;
     } elseif ($action === 'add') {
         add_category($pdo, $names['name_en'], $names['name_zh']);
-        redirect('/admin/categories.php?notice=category_added');
+        redirect(admin_url('categories', ['notice' => 'category_added']));
     } elseif ($action === 'rename' && $category !== null) {
         rename_category($pdo, (int) $category['id'], $names['name_en'], $names['name_zh']);
-        redirect('/admin/categories.php?notice=category_saved');
+        redirect(admin_url('categories', ['notice' => 'category_saved']));
     }
 }
 
@@ -65,12 +65,12 @@ if ($error !== null) {
       <section class="admin-card confirm-card">
         <h2><?= e(at('delete_category_question', category_name($deleting, admin_lang()))) ?></h2>
         <p class="admin-intro"><?= e(at('delete_category_warning', $usage[$deleting['id']] ?? 0)) ?></p>
-        <form method="post" action="/admin/categories.php" class="confirm-actions">
+        <form method="post" action="<?= admin_url('categories') ?>" class="confirm-actions">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="delete" />
           <input type="hidden" name="id" value="<?= (int) $deleting['id'] ?>" />
           <button type="submit" class="btn admin-btn btn-danger"><?= at('delete_confirm') ?></button>
-          <a href="/admin/categories.php" class="btn btn-ghost admin-btn"><?= at('cancel') ?></a>
+          <a href="<?= admin_url('categories') ?>" class="btn btn-ghost admin-btn"><?= at('cancel') ?></a>
         </form>
       </section>
 <?php endif; ?>
@@ -82,7 +82,7 @@ if ($error !== null) {
 <?php foreach ($categories as $category):
     $cid = (int) $category['id'];
 ?>
-        <form method="post" action="/admin/categories.php" class="admin-card category-row">
+        <form method="post" action="<?= admin_url('categories') ?>" class="admin-card category-row">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="rename" />
           <input type="hidden" name="id" value="<?= $cid ?>" />
@@ -91,13 +91,13 @@ if ($error !== null) {
           <span class="category-row-count"><?= at('col_count', (int) ($usage[$cid] ?? 0)) ?></span>
           <span class="category-row-actions">
             <button type="submit" class="btn btn-ghost admin-btn"><?= at('save') ?></button>
-            <a href="/admin/categories.php?delete=<?= $cid ?>" class="danger-link"><?= at('delete') ?></a>
+            <a href="<?= e(admin_url('categories', ['delete' => $cid])) ?>" class="danger-link"><?= at('delete') ?></a>
           </span>
         </form>
 <?php endforeach; ?>
       </div>
 
-      <form method="post" action="/admin/categories.php" class="admin-card category-row category-row--new">
+      <form method="post" action="<?= admin_url('categories') ?>" class="admin-card category-row category-row--new">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="add" />
         <h2><?= at('add_category') ?></h2>
