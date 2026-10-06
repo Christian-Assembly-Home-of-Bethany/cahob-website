@@ -154,8 +154,14 @@ final class AdminPagesTest extends TestCase
         $this->assertStringContainsString('<h1>分類</h1>', $html);
         $this->assertStringContainsString('name="name_zh" value="羅馬書"', $html);
         $this->assertStringContainsString('name="name_en" value="Romans"', $html);
-        $this->assertStringContainsString('信息數: 2', $html, 'Drafts count too: deleting the category affects them.');
+        $this->assertStringContainsString('信息數：2', $html, 'Drafts count too: deleting the category affects them.');
         $this->assertStringContainsString('href="/admin/categories.php?delete=' . $romans . '"', $html);
+    }
+
+    public function testMalformedCategoryIdIsIgnored(): void
+    {
+        $html = $this->render('categories.php', ['delete' => ['1']]);
+        $this->assertStringNotContainsString('confirm-card', $html, 'No delete question, and no warning about an array.');
     }
 
     public function testAddingACategoryNeedsBothNames(): void
