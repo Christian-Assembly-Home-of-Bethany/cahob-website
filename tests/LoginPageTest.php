@@ -174,7 +174,7 @@ final class LoginPageTest extends TestCase
         $html = $this->post(['username' => "pastor' OR '1'='1' --", 'password' => "' OR 1=1 --"]);
         $this->assertStringContainsString('錯誤：密碼或用戶名不正確', $html);
         $this->assertArrayNotHasKey('admin', $_SESSION);
-        $this->assertSame(['categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], db()->query("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN));
+        $this->assertSame(['blogger_posts', 'categories', 'login_attempts', 'message_revisions', 'messages', 'slug_redirects'], db()->query("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN));
     }
 
     public function testStaleFormTokenIsRejected(): void

@@ -935,3 +935,37 @@ html[lang="zh-Hant"] .ql-snow .ql-tooltip.ql-editing a.ql-action::after {
     padding-bottom: 0;
   }
 }
+
+/* ---------- Sync from Blogger: the preview's lists ---------- */
+
+.sync-card {
+  margin-top: 20px;
+  padding: 24px 28px;
+  justify-items: stretch;
+}
+
+.sync-card h2 {
+  font-size: 1.1rem;
+}
+
+.sync-list {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.sync-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.sync-meta {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.sync-apply {
+  margin: 24px 0;
+}

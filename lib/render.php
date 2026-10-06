@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-const STYLES_VERSION = 14;
+const STYLES_VERSION = 15;
 const HERO_IMAGE = '/images/meeting_hall_side.jpg';
 
 /** Escape text for HTML. Message bodies are already sanitized HTML and are printed as-is. */
@@ -500,6 +500,23 @@ const ADMIN_TEXT = [
         'preview_title' => '預覽',
         'preview_notice' => '預覽：這是目前編輯中的內容，尚未儲存，訪客看不到。',
         'preview_empty' => '還沒有內容可以預覽。',
+        // Sync from Blogger
+        'sync_title' => '從 Blogger 同步',
+        'sync_button' => '從 Blogger 同步',
+        'sync_intro' => '把在 Blogger 上新增或修改的文章帶到網站。請先看下面的預覽，再按「套用」。新文章會直接發佈，標題取自文章的第一行。',
+        'sync_error' => '無法讀取 Blogger：%s',
+        'sync_up_to_date' => '網站已經和 Blogger 一致，沒有需要同步的內容。',
+        'sync_new' => '新信息，將直接發佈（%d）',
+        'sync_update' => '在 Blogger 上修改過，將更新內容（%d）',
+        'sync_add' => '加上另一種語言（%d）',
+        'sync_kept' => '在網站上改過，不會被覆蓋（%d）',
+        'sync_trash' => '在 Blogger 上修改過，但信息已刪除，不會更新（%d）',
+        'sync_link' => '連結之前匯入的信息（%d）',
+        'sync_link_note' => '第一次同步時，會把之前匯入的信息和它們的 Blogger 文章連結起來，內容不會改變。',
+        'sync_removed' => '已從 Blogger 刪除，網站上仍保留（%d）',
+        'sync_unchanged' => '%d 篇 Blogger 文章沒有變動。',
+        'sync_apply' => '套用',
+        'sync_done' => '同步完成：新增 %d 篇信息，更新 %d 篇。',
         // Categories
         'category' => '分類',
         'category_none' => '（無）',
@@ -643,6 +660,23 @@ const ADMIN_TEXT = [
         'preview_title' => 'Preview',
         'preview_notice' => "Preview: this is the text you're editing. It isn't saved, and visitors can't see it.",
         'preview_empty' => "There's nothing to preview yet.",
+        // Sync from Blogger
+        'sync_title' => 'Sync from Blogger',
+        'sync_button' => 'Sync from Blogger',
+        'sync_intro' => 'Brings posts added or edited on Blogger over to the website. Check the preview below, then click Apply. New posts are published right away, titled from their first line.',
+        'sync_error' => "Couldn't read Blogger: %s",
+        'sync_up_to_date' => 'The website is up to date with Blogger.',
+        'sync_new' => 'New messages, published right away (%d)',
+        'sync_update' => 'Edited on Blogger, text will be updated (%d)',
+        'sync_add' => 'Adding the other language (%d)',
+        'sync_kept' => 'Edited on the website, not overwritten (%d)',
+        'sync_trash' => 'Edited on Blogger, but the message is deleted, so not updated (%d)',
+        'sync_link' => 'Linking messages imported earlier (%d)',
+        'sync_link_note' => 'The first sync connects the messages imported earlier to their Blogger posts. Their text stays the same.',
+        'sync_removed' => 'Deleted on Blogger, still on the website (%d)',
+        'sync_unchanged' => '%d Blogger posts unchanged.',
+        'sync_apply' => 'Apply',
+        'sync_done' => 'Synced: %d new messages, %d updated.',
         // Categories
         'category' => 'Category',
         'category_none' => '(None)',
