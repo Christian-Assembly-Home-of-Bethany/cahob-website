@@ -79,6 +79,15 @@ final class DevRouterTest extends TestCase
         $this->assertStringContainsString(str_contains($uri, '-zh') ? '找不到這篇信息' : 'Message not found', $html);
     }
 
+    /** Without QSA the live server drops ?version=... when it rewrites /messages/<slug>. The local router keeps it either way. */
+    public function testFolderRewritesKeepTheQueryString(): void
+    {
+        foreach (['messages', 'messages-zh'] as $folder) {
+            $rules = file_get_contents(__DIR__ . '/../' . $folder . '/.htaccess');
+            $this->assertMatchesRegularExpression('#^RewriteRule \S+ index\.php\?slug=\$1 \[L,QSA\]\r?$#m', $rules, $folder);
+        }
+    }
+
     #[DataProvider('blocked')]
     public function testBlocksPrivateFolders(string $uri): void
     {

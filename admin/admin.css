@@ -142,6 +142,13 @@
   color: var(--color-text);
 }
 
+/* Chinese fonts draw the hidden-password dots full width, so they come out large and far
+   apart. Hidden passwords use the English font; shown ones (type="text") keep the page font. */
+.admin-form input[type="password"] {
+  font-family: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.06em;
+}
+
 .admin-form input:focus {
   outline: 2px solid var(--color-accent-light);
   outline-offset: 1px;

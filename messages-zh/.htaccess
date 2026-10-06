@@ -1,3 +1,4 @@
 # /messages-zh/<slug> shows one message; the slug's characters are what slugify() makes.
+# QSA keeps the visitor's query string, e.g. ?version=zh from the language switch.
 RewriteEngine On
-RewriteRule ^([a-z0-9-]+)/?$ index.php?slug=$1 [L]
+RewriteRule ^([a-z0-9-]+)/?$ index.php?slug=$1 [L,QSA]
