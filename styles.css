@@ -1034,6 +1034,22 @@ a {
   margin-inline: auto;
 }
 
+/* Picking a category swaps the list in place (script.js): it fades out, then the new one fades in */
+.messages-main {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.messages-main.is-leaving {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .messages-main {
+    transition: none;
+  }
+}
+
 .message-item {
   padding: 36px 0;
   border-bottom: 1px solid var(--color-border);
