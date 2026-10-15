@@ -39,15 +39,15 @@ page_header($lang, $title, t($lang, 'list_description'), list_url(other_lang($la
 page_hero(t($lang, 'eyebrow'), $category !== null ? category_name($category, $lang) : t($lang, 'messages'), t($lang, 'tagline'));
 ?>
 
-    <section class="section" aria-label="<?= t($lang, 'messages') ?>">
+    <section class="section" id="messages" aria-label="<?= t($lang, 'messages') ?>">
       <div class="container<?= $categories ? ' messages-layout' : '' ?>">
 <?php if ($categories): ?>
         <nav class="category-nav" aria-label="<?= t($lang, 'categories') ?>">
           <h2><?= t($lang, 'categories') ?></h2>
           <ul>
-            <li><a href="<?= list_url($lang) ?>"<?= $category === null ? ' aria-current="page"' : '' ?>><?= t($lang, 'all_categories') ?> <span class="category-count"><?= $allCount ?></span></a></li>
+            <li><a href="<?= list_url($lang) ?>#messages"<?= $category === null ? ' aria-current="page"' : '' ?>><?= t($lang, 'all_categories') ?> <span class="category-count"><?= $allCount ?></span></a></li>
 <?php foreach ($categories as $item): ?>
-            <li><a href="<?= e(list_url($lang, 1, $item['slug'])) ?>"<?= $item['id'] === ($category['id'] ?? null) ? ' aria-current="page"' : '' ?>><?= e(category_name($item, $lang)) ?> <span class="category-count"><?= (int) $item['count'] ?></span></a></li>
+            <li><a href="<?= e(list_url($lang, 1, $item['slug'])) ?>#messages"<?= $item['id'] === ($category['id'] ?? null) ? ' aria-current="page"' : '' ?>><?= e(category_name($item, $lang)) ?> <span class="category-count"><?= (int) $item['count'] ?></span></a></li>
 <?php endforeach; ?>
           </ul>
         </nav>

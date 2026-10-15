@@ -360,8 +360,9 @@ final class PagesTest extends TestCase
         $html = $this->render('messages.php');
 
         $this->assertStringContainsString('<nav class="category-nav" aria-label="Categories">', $html);
-        $this->assertStringContainsString('<a href="/messages/" aria-current="page">All messages <span class="category-count">3</span></a>', $html);
-        $this->assertStringContainsString('<a href="/messages/?category=romans">Romans <span class="category-count">2</span></a>', $html);
+        $this->assertStringContainsString('<a href="/messages/#messages" aria-current="page">All messages <span class="category-count">3</span></a>', $html);
+        $this->assertStringContainsString('<a href="/messages/?category=romans#messages">Romans <span class="category-count">2</span></a>', $html);
+        $this->assertStringContainsString('<section class="section" id="messages"', $html, 'Category links open at the list, not the top of the page.');
         $this->assertStringNotContainsString('Church History', $html, 'Empty categories are left out.');
     }
 
@@ -377,8 +378,8 @@ final class PagesTest extends TestCase
         $this->assertStringContainsString('<h1 class="hero-title fade-up">羅馬書</h1>', $html);
         $this->assertStringContainsString('羅馬書一', $html);
         $this->assertStringNotContainsString('沒有分類', $html);
-        $this->assertStringContainsString('<a href="/messages-zh/?category=romans" aria-current="page">羅馬書', $html);
-        $this->assertStringContainsString('<a href="/messages-zh/">所有信息 <span class="category-count">2</span></a>', $html);
+        $this->assertStringContainsString('<a href="/messages-zh/?category=romans#messages" aria-current="page">羅馬書', $html);
+        $this->assertStringContainsString('<a href="/messages-zh/#messages">所有信息 <span class="category-count">2</span></a>', $html);
         $this->assertStringContainsString('href="/messages/?category=romans" class="lang-switch"', $html, 'The language switch keeps the category.');
     }
 

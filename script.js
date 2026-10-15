@@ -86,6 +86,27 @@ if (messageActions) {
   messageActions.querySelector("[data-print]")?.addEventListener("click", () => window.print());
 }
 
+// Picking a category on the message list reloads the page; keep it scrolled where it was
+// instead of going back to the top. (Without JavaScript, the #messages link still opens at the list.)
+const SCROLL_KEY = "cahob-category-scroll";
+document.querySelectorAll(".category-nav a").forEach((link) => {
+  link.addEventListener("click", () => {
+    try {
+      sessionStorage.setItem(SCROLL_KEY, JSON.stringify({ to: link.pathname + link.search, y: window.scrollY }));
+    } catch { /* storage blocked: the #messages link still lands on the list */ }
+  });
+});
+try {
+  const kept = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "null");
+  sessionStorage.removeItem(SCROLL_KEY);
+  if (kept && kept.to === window.location.pathname + window.location.search) {
+    // Again once loaded, since the browser's own jump to #messages can come after this.
+    const restore = () => window.scrollTo({ top: kept.y, behavior: "instant" });
+    restore();
+    window.addEventListener("load", restore, { once: true });
+  }
+} catch { /* nothing kept */ }
+
 // The home page answers at both / and /index.html; show the shorter address.
 if (window.location.pathname.endsWith("/index.html")) {
   history.replaceState(null, "", window.location.pathname.slice(0, -"index.html".length) + window.location.search + window.location.hash);
