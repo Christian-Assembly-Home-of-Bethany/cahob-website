@@ -1034,6 +1034,10 @@ a {
   margin-inline: auto;
 }
 
+.message-list {
+  line-height: 1.15;
+}
+
 /* Picking a category swaps the list in place (script.js): it fades out, then the new one fades in */
 .messages-main {
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -1051,7 +1055,7 @@ a {
 }
 
 .message-item {
-  padding: 36px 0;
+  padding: 24px 0;
   border-bottom: 1px solid var(--color-border);
 }
 
